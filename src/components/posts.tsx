@@ -30,6 +30,7 @@ export async function PostCard({
     profile.base_role === "admin" ||
     (post.post_type === "normal" && profile.id === post.author_user_id);
   const Heading = detail ? "h1" : "h2";
+  const media = post.post_media;
   return (
     <article
       className={`post-card card ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : ""}`}
@@ -79,7 +80,7 @@ export async function PostCard({
             </Link>
           </>
         )}
-        {post.post_media.map((media) => (
+        {media && (
           <div className="post-image-wrap" key={media.id}>
             {/* Private authenticated endpoint; bypass public image optimization caches. */}
             <img
@@ -92,7 +93,7 @@ export async function PostCard({
               <DeleteButton action="remove-media" id={media.id} label="Fjern bilde" />
             )}
           </div>
-        ))}
+        )}
       </div>
       <footer className="post-footer">
         <span>
@@ -163,7 +164,7 @@ export function PostForm({ post, roles }: { post?: Post; roles: SecondaryRole[] 
           </small>
         </label>
       )}
-      {!post?.post_media.length && (
+      {!post?.post_media && (
         <fieldset className="upload-field">
           <legend>
             <ImagePlus size={18} /> Legg ved bilde <span className="muted">(valgfritt)</span>

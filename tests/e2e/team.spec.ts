@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 // Use a disposable local/test Supabase project. The privileged key is test-only,
 // never NEXT_PUBLIC_ and never imported by the application.
 const enabled = Boolean(process.env.E2E_SUPABASE_URL && process.env.E2E_SUPABASE_SERVICE_ROLE_KEY);
+if (process.env.E2E_REQUIRE_BACKEND === "1" && !enabled)
+  throw new Error("Authenticated E2E requires test Supabase connection settings.");
 test.describe("full authenticated workflow against Supabase", () => {
   test.skip(!enabled, "Requires a disposable Supabase instance; see README.");
   test("registration, approval, role controls, post, event and lineup publication", async ({
@@ -91,6 +93,9 @@ test.describe("full authenticated workflow against Supabase", () => {
     await coach.getByLabel("Motstander", { exact: true }).fill("Testmotstander");
     await coach.getByRole("button", { name: "Opprett hendelse" }).click();
     await coach.getByRole("link", { name: "Lag kampoppstilling" }).click();
+    await expect(
+      coach.getByRole("heading", { name: "Kampoppstilling.", exact: true }),
+    ).toBeVisible();
     for (let i = 1; i <= 6; i++)
       await coach
         .getByLabel(`Posisjon ${i}`, { exact: true })

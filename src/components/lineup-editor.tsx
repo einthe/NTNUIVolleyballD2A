@@ -54,8 +54,9 @@ export function LineupEditor({
         <div className="form-grid">
           {[4, 3, 2, 5, 6, 1].map((position) => (
             <label key={position}>
-              Posisjon {position}
+              <span id={`slot-label-${position}`}>Posisjon {position}</span>
               <select
+                aria-labelledby={`slot-label-${position}`}
                 name={`slot_${position}`}
                 value={selection[`slot_${position}`] ?? ""}
                 onChange={(e) =>

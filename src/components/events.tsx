@@ -4,9 +4,9 @@ import { eventTone, eventTypes, type TeamEvent } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
 import { Badge } from "./ui";
 export const homeAway = { home: "Hjemmekamp", away: "Bortekamp", neutral: "Nøytral bane" };
-export function EventCard({ event }: { event: TeamEvent }) {
+export function EventCard({ event, href }: { event: TeamEvent; href?: string }) {
   return (
-    <Link className="event-card card" href={`/schedule/${event.id}`}>
+    <Link className="event-card card" href={href ?? `/schedule/${event.id}`}>
       <div className="event-date">
         <span>{dateLabel(event.starts_at, "MMM")}</span>
         <strong>{dateLabel(event.starts_at, "dd")}</strong>

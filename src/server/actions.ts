@@ -32,7 +32,7 @@ function friendlyError(message: string) {
     return "En valgt spiller er ikke lenger tilgjengelig. Last siden på nytt.";
   return "Kunne ikke lagre endringen. Kontroller feltene og prøv igjen.";
 }
-export async function mutate(_state: ActionState, form: FormData): Promise<ActionState> {
+export async function mutate(previousState: ActionState, form: FormData): Promise<ActionState> {
   const profile = await requireAccount();
   const db = await createClient();
   const kind = String(form.get("action"));
@@ -40,6 +40,13 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
   const nullable = (key: string) => text(key) || null;
   const number = (key: string) => (text(key) === "" ? null : Number(text(key)));
   let destination: string | undefined;
+  let savedPost: Pick<ActionState, "savedPostId" | "savedPostUpdatedAt"> =
+    kind === "post"
+      ? {
+          savedPostId: previousState.savedPostId,
+          savedPostUpdatedAt: previousState.savedPostUpdatedAt,
+        }
+      : {};
   try {
     const rpc = async (name: string, data: Record<string, unknown>) => {
       const result = await db.rpc(name, data);
@@ -48,11 +55,12 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
     };
     if (kind === "post") {
       const input = postSchema.parse({
-        id: text("id") || undefined,
+        id: savedPost.savedPostId || text("id") || undefined,
         title: text("title"),
         body: text("body"),
         role_context: nullable("role_context"),
-        expected_updated_at: text("expected_updated_at") || undefined,
+        expected_updated_at:
+          savedPost.savedPostUpdatedAt || text("expected_updated_at") || undefined,
       });
       const file = form.get("image");
       let image: { buffer: Buffer; mime: string; extension: string } | undefined;
@@ -62,12 +70,13 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
           Math.min(10, Math.max(1, Number(process.env.MAX_IMAGE_SIZE_MB) || 3)) * 1024 * 1024;
         if (file.size > maxSize)
           return {
+            ...savedPost,
             error: `Bildet er for stort. Maksimal størrelse er ${maxSize / 1024 / 1024} MB.`,
           };
         const source = Buffer.from(await file.arrayBuffer());
         const metadata = await sharp(source, { limitInputPixels: 40_000_000 }).metadata();
         if (!["jpeg", "png", "webp"].includes(metadata.format ?? ""))
-          return { error: "Velg et gyldig JPEG-, PNG- eller WebP-bilde." };
+          return { ...savedPost, error: "Velg et gyldig JPEG-, PNG- eller WebP-bilde." };
         const buffer = await sharp(source, { limitInputPixels: 40_000_000 })
           .rotate()
           .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
@@ -78,6 +87,10 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
       const alt = z.string().max(300).parse(text("alt_text"));
       const id = await rpc("save_post", { data: input });
       if (image) {
+        // If Storage fails after the text commits, retry this same post instead
+        // of inserting a duplicate. RPC ownership and stale-edit checks still apply.
+        const { data: saved } = await db.from("posts").select("updated_at").eq("id", id).single();
+        savedPost = { savedPostId: id, savedPostUpdatedAt: saved?.updated_at };
         const path = `${profile.id}/${crypto.randomUUID()}.${image.extension}`;
         const uploaded = await db.storage
           .from("post-images")
@@ -85,8 +98,9 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
         if (uploaded.error) {
           revalidatePath("/", "layout");
           return {
+            ...savedPost,
             error:
-              "Innlegget ble lagret, men bildet kunne ikke lastes opp. Åpne innlegget fra feeden for å prøve bildet på nytt.",
+              "Teksten er lagret, men bildet kunne ikke lastes opp. Prøv igjen, eller åpne det lagrede innlegget.",
           };
         }
         try {
@@ -103,6 +117,7 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
           await db.storage.from("post-images").remove([path]);
           revalidatePath("/", "layout");
           return {
+            ...savedPost,
             error:
               "Innlegget ble lagret, men bildet kunne ikke knyttes til det. Åpne innlegget fra feeden for å prøve igjen.",
           };
@@ -187,10 +202,10 @@ export async function mutate(_state: ActionState, form: FormData): Promise<Actio
       await db.storage.from("post-images").remove([path]);
     } else return { error: "Ukjent handling." };
   } catch (error) {
-    if (error instanceof z.ZodError) return { error: error.issues[0].message };
+    if (error instanceof z.ZodError) return { ...savedPost, error: error.issues[0].message };
     if (error instanceof Error && error.message.includes("sommertid"))
       return { error: error.message };
-    return { error: friendlyError(error instanceof Error ? error.message : "") };
+    return { ...savedPost, error: friendlyError(error instanceof Error ? error.message : "") };
   }
   revalidatePath("/", "layout");
   if (destination) redirect(destination);

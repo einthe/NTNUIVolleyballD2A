@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Plus, CalendarDays } from "lucide-react";
+import { Plus, CalendarDays, Volleyball } from "lucide-react";
 import { getEvents, getRoles, requireAccount } from "@/server/queries";
-import { canManageEvent, eventTypes, type EventType } from "@/lib/domain";
+import { canCoach, canManageEvent, eventTypes, type EventType } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
 import { EmptyState, PageHeading, Pagination, pageNumber } from "@/components/ui";
 import { EventCard } from "@/components/events";
@@ -31,11 +31,18 @@ export default async function Schedule({
         title="Terminliste"
         description="Treninger, kamper og alt det andre vi gjør sammen."
       >
-        {canCreate && (
-          <Link href="/schedule/new" className="button">
-            <Plus size={18} /> Ny hendelse
-          </Link>
-        )}
+        <div className="button-row">
+          {canCoach(profile) && (
+            <Link href="/lineups/new" className="button secondary">
+              <Volleyball size={18} /> Kampoppstilling
+            </Link>
+          )}
+          {canCreate && (
+            <Link href="/schedule/new" className="button">
+              <Plus size={18} /> Ny hendelse
+            </Link>
+          )}
+        </div>
       </PageHeading>
       <div className="schedule-toolbar">
         <nav className="filter-tabs" aria-label="Tidsperiode">

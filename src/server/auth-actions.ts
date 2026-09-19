@@ -3,7 +3,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient, isConfigured } from "@/lib/supabase/server";
 import { registrationSchema } from "@/lib/domain";
-export type ActionState = { error?: string; success?: string };
+export type ActionState = {
+  error?: string;
+  success?: string;
+  savedPostId?: string;
+  savedPostUpdatedAt?: string;
+};
 export async function authAction(_state: ActionState, form: FormData): Promise<ActionState> {
   if (!isConfigured())
     return { error: "Tjenesten er ikke konfigurert ennå. Kontakt administrator." };

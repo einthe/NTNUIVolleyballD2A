@@ -1,5 +1,5 @@
 "use client";
-export default function ErrorPage({ reset }: { reset: () => void }) {
+export default function ErrorPage({ retry }: { retry: () => void }) {
   return (
     <main className="standalone-message">
       <p className="eyebrow">EN LITEN PAUSE</p>
@@ -7,7 +7,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <p className="muted">
         Prøv igjen om et øyeblikk. Kontakt administrator hvis problemet fortsetter.
       </p>
-      <button className="button" onClick={reset}>
+      <button className="button" onClick={retry}>
         Prøv igjen
       </button>
     </main>

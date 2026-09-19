@@ -4,6 +4,7 @@ import { useFormStatus } from "react-dom";
 import { Check, LoaderCircle } from "lucide-react";
 import { mutate } from "@/server/actions";
 import { authAction, type ActionState } from "@/server/auth-actions";
+import Link from "next/link";
 export function Submit({
   children = "Lagre endringer",
   secondary = false,
@@ -51,6 +52,11 @@ export function ActionForm({
         <p className="message error" role="alert">
           {state.error}
         </p>
+      )}
+      {state.savedPostId && (
+        <Link className="inline-link" href={`/posts/${state.savedPostId}/edit`}>
+          Åpne det lagrede innlegget
+        </Link>
       )}
       {state.success && (
         <p className="message success" role="status">
