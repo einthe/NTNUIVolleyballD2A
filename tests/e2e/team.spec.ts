@@ -1,0 +1,107 @@
+import { test, expect } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
+
+// Use a disposable local/test Supabase project. The privileged key is test-only,
+// never NEXT_PUBLIC_ and never imported by the application.
+const enabled = Boolean(process.env.E2E_SUPABASE_URL && process.env.E2E_SUPABASE_SERVICE_ROLE_KEY);
+test.describe("full authenticated workflow against Supabase", () => {
+  test.skip(!enabled, "Requires a disposable Supabase instance; see README.");
+  test("registration, approval, role controls, post, event and lineup publication", async ({
+    page,
+    browser,
+  }, testInfo) => {
+    test.setTimeout(120000);
+    const service = createClient(
+      process.env.E2E_SUPABASE_URL!,
+      process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const run = randomUUID().slice(0, 8);
+    const password = `Test-${randomUUID()}!`;
+    const email = `member-${run}@example.test`;
+    const adminEmail = `admin-${run}@example.test`;
+    const coachEmail = `coach-${run}@example.test`;
+    const makeUser = async (email: string, name: string, role: "player" | "coach" | "admin") => {
+      const { data, error } = await service.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: name },
+      });
+      if (error) throw error;
+      const updated = await service
+        .from("profiles")
+        .update({ base_role: role, account_status: "approved" })
+        .eq("id", data.user.id);
+      if (updated.error) throw updated.error;
+      return data.user.id;
+    };
+    await makeUser(adminEmail, `Admin ${run}`, "admin");
+    await makeUser(coachEmail, `Coach ${run}`, "coach");
+    for (let i = 0; i < 6; i++)
+      await makeUser(`starter-${i}-${run}@example.test`, `Starter ${run} ${i + 1}`, "player");
+    await page.goto("/auth/sign-up");
+    await page.getByLabel("Fullt navn").fill(`Player ${run}`);
+    await page.getByLabel("E-postadresse").fill(email);
+    await page.getByLabel("Passord", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Opprett konto" }).click();
+    await expect(page.getByRole("heading", { name: "Venter på godkjenning." })).toBeVisible();
+    const context = await browser.newContext({
+      baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    });
+    const admin = await context.newPage();
+    await admin.goto(
+      `${testInfo.project.use.baseURL ?? process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000"}/auth/sign-in`,
+    );
+    await admin.getByLabel("E-postadresse").fill(adminEmail);
+    await admin.getByLabel("Passord", { exact: true }).fill(password);
+    await admin.getByRole("button", { name: "Logg inn", exact: true }).click();
+    await admin.waitForURL("**/feed");
+    await admin.goto("/admin/users");
+    const request = admin.locator("details.admin-user").filter({ hasText: email });
+    await request.locator("summary").first().click();
+    await request.getByRole("button", { name: "Behandle forespørsel" }).click();
+    await expect(request.getByRole("status")).toContainText("lagret");
+    await page.goto("/feed");
+    await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Nytt innlegg", exact: true }).click();
+    await page.getByLabel("Tittel", { exact: true }).fill(`E2E post ${run}`);
+    await page.getByLabel("Innlegg", { exact: true }).fill("En melding til laget.");
+    await page.getByRole("button", { name: "Publiser innlegg" }).click();
+    await expect(page.getByRole("heading", { name: `E2E post ${run}` })).toBeVisible();
+    await page.goto("/schedule");
+    await expect(page.getByRole("link", { name: "Ny hendelse" })).toHaveCount(0);
+    await page.goto("/roster");
+    await expect(page.getByText(email, { exact: true })).toHaveCount(0);
+    await context.close();
+    // Separate coach session exercises the graphical starting lineup.
+    const coachContext = await browser.newContext({
+      baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    });
+    const coach = await coachContext.newPage();
+    await coach.goto("/auth/sign-in");
+    await coach.getByLabel("E-postadresse").fill(coachEmail);
+    await coach.getByLabel("Passord", { exact: true }).fill(password);
+    await coach.getByRole("button", { name: "Logg inn", exact: true }).click();
+    await coach.waitForURL("**/feed");
+    await coach.goto("/schedule/new");
+    await coach.getByLabel("Tittel", { exact: true }).fill(`E2E match ${run}`);
+    await coach.getByLabel("Starter", { exact: true }).fill("2027-01-15T18:00");
+    await coach.getByLabel("Motstander", { exact: true }).fill("Testmotstander");
+    await coach.getByRole("button", { name: "Opprett hendelse" }).click();
+    await coach.getByRole("link", { name: "Lag kampoppstilling" }).click();
+    for (let i = 1; i <= 6; i++)
+      await coach
+        .getByLabel(`Posisjon ${i}`, { exact: true })
+        .selectOption({ label: `Starter ${run} ${i}` });
+    await coach.getByRole("button", { name: "Publiser oppstilling" }).click();
+    await expect(coach.getByText("Versjon 1 · Publisert", { exact: false })).toBeVisible();
+    await page.goto("/feed?filter=lineup");
+    await expect(
+      page.getByRole("heading", { name: "Klare for Testmotstander" }).first(),
+    ).toBeVisible();
+    await coachContext.close();
+    // Test records intentionally remain for inspection. Reset the disposable DB afterward.
+  });
+});
