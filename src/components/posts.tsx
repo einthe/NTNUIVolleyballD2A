@@ -1,5 +1,5 @@
 "use client";
-import { useState, useId, useContext } from "react";
+import { useState, useId, useContext, type CSSProperties } from "react";
 import { TeamContext } from "./team-provider";
 /* eslint-disable @next/next/no-img-element -- Private authenticated media must bypass shared optimizer caches. */
 import Link from "next/link";
@@ -36,6 +36,13 @@ export function PostCard({
   const media = post.post_media;
   return (
     <article
+      style={
+        post.secondary_role_context_key
+          ? ({
+              "--role-color": `var(--${roleTone[post.secondary_role_context_key]})`,
+            } as CSSProperties)
+          : undefined
+      }
       className={`post-card card ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : ""}`}
     >
       <header className="post-header">

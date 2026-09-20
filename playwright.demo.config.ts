@@ -12,6 +12,7 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120000,
     env: {
+      NEXT_BUILD_DIR: ".next-demo-tests",
       // Deliberately unusable remote configuration: the launcher must override it.
       NEXT_PUBLIC_SUPABASE_URL: "https://invalid.example.test",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "not-a-real-key",

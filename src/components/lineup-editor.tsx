@@ -52,7 +52,7 @@ export function LineupEditor({
             Velg en spiller i hver rotasjonsposisjon. Lagre et utkast, eller publiser til laget.
           </p>
         </div>
-        <div className="form-grid">
+        <div className="lineup-selection">
           {[4, 3, 2, 5, 6, 1].map((position) => (
             <label key={position}>
               <span id={`slot-label-${position}`}>Posisjon {position}</span>

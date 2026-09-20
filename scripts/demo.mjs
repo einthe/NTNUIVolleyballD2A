@@ -51,7 +51,7 @@ const child = spawn(
     env: {
       ...process.env,
       NODE_ENV: "development",
-      NEXT_BUILD_DIR: ".next-demo",
+      NEXT_BUILD_DIR: process.env.NEXT_BUILD_DIR ?? ".next-demo",
       NEXT_PUBLIC_SUPABASE_URL: backend.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "local-demo-publishable-key",
       NEXT_PUBLIC_SITE_URL: origin,

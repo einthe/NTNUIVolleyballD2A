@@ -90,9 +90,9 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
   expect(reads["/api/team/events"] ?? 0).toBe(0);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Lag", exact: true })
+    .getByRole("link", { name: "Stall", exact: true })
     .click();
-  await expect(page.getByRole("heading", { name: "Laget vårt.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
   expect(reads["/api/team/roster"] ?? 0).toBe(0);
   await page.getByLabel("Søk etter spiller").fill("Starter");
   await page.getByRole("button", { name: "Søk", exact: true }).click();
@@ -102,7 +102,6 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
     .getByRole("link", { name: "Terminliste", exact: true })
     .click();
   await page.getByLabel("Type hendelse", { exact: true }).selectOption("match");
-  await page.getByRole("button", { name: "Vis", exact: true }).click();
   await expect(page).toHaveURL(/type=match/);
   await expect(page.getByRole("heading", { name: eventTitle, exact: true })).toBeVisible();
   await page.clock.install();
@@ -190,7 +189,7 @@ test("private reads enforce scope, permissions, sign-out and account changes", a
   await page.clock.fastForward(16_000);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Lag", exact: true })
+    .getByRole("link", { name: "Stall", exact: true })
     .click();
   await expect(page).toHaveURL(/\/auth\/rejected$/);
   await expect(page.locator(".player-card")).toHaveCount(0);

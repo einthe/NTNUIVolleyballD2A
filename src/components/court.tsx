@@ -14,7 +14,9 @@ export function Court({ slots, compact = false }: { slots: Slot[]; compact?: boo
               <div className="court-slot" key={position}>
                 <span className="rotation-number">{position}</span>
                 <div className="jersey">{slot?.jersey_number_snapshot ?? "–"}</div>
-                <strong>{slot?.full_name_snapshot ?? "Ledig posisjon"}</strong>
+                <strong title={slot?.full_name_snapshot ?? undefined}>
+                  {slot?.full_name_snapshot ?? "Ledig posisjon"}
+                </strong>
                 {slot?.primary_position_snapshot && (
                   <small>{positions[slot.primary_position_snapshot]}</small>
                 )}
@@ -26,7 +28,7 @@ export function Court({ slots, compact = false }: { slots: Slot[]; compact?: boo
       {libero && (
         <div className="libero-card">
           <span className="eyebrow">LIBERO</span>
-          <span className="libero-number">#{libero.jersey_number_snapshot ?? "–"}</span>
+          <div className="jersey">{libero.jersey_number_snapshot ?? "–"}</div>
           <strong>{libero.full_name_snapshot}</strong>
         </div>
       )}

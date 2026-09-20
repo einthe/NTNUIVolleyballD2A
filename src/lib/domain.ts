@@ -269,12 +269,12 @@ export const imageSchema = z.object({
 export const roleTone: Record<SecondaryRole, string> = {
   captain: "gold",
   vice_captain: "gold",
-  social_media_manager: "purple",
+  social_media_manager: "pink",
   team_manager: "blue",
-  travel_coordinator: "blue",
+  travel_coordinator: "teal",
   social_coordinator: "purple",
-  financial_manager: "gold",
-  volunteer_work_coordinator: "green",
+  financial_manager: "green",
+  volunteer_work_coordinator: "orange",
 };
 export const eventTone: Record<EventType, string> = {
   match: "green",

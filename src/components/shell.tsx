@@ -14,7 +14,7 @@ import { Avatar, Brand } from "./ui";
 const links = [
   { href: "/feed", label: "Innlegg", icon: LayoutDashboard },
   { href: "/schedule", label: "Terminliste", icon: CalendarDays },
-  { href: "/roster", label: "Lag", icon: Users },
+  { href: "/roster", label: "Stall", icon: Users },
 ];
 export function Shell({ children }: { children: ReactNode }) {
   const { profile, scope } = useTeam();
@@ -67,7 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {pathname.startsWith("/schedule")
               ? "Terminliste"
               : pathname.startsWith("/roster")
-                ? "Lag"
+                ? "Stall"
                 : pathname.startsWith("/admin")
                   ? "Administrasjon"
                   : "Innlegg"}

@@ -1,11 +1,10 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
 import { QueryState } from "@/components/query-state";
 import Link from "next/link";
-import Form from "next/form";
 import { Plus, CalendarDays, Volleyball } from "lucide-react";
 import { canCoach, canManageEvent, eventTypes, type EventType } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
@@ -47,6 +46,7 @@ function ScheduleView({
     Error
   >;
 }) {
+  const router = useRouter();
   const { events = [], count = 0 } = query.data ?? {};
   const canCreate = (Object.keys(eventTypes) as EventType[]).some((type) =>
     canManageEvent(profile, roles, type),
@@ -83,12 +83,22 @@ function ScheduleView({
             Tidligere
           </Link>
         </nav>
-        <Form action="/schedule" className="inline-filter">
-          <input type="hidden" name="history" value={past ? "1" : "0"} />
+        <div className="inline-filter">
           <label className="sr-only" htmlFor="event-filter">
             Type hendelse
           </label>
-          <select id="event-filter" name="type" defaultValue={kind ?? ""}>
+          <select
+            id="event-filter"
+            name="type"
+            value={kind ?? ""}
+            onChange={(event) => {
+              const params = new URLSearchParams();
+              if (past) params.set("history", "1");
+              if (event.target.value) params.set("type", event.target.value);
+              const search = params.toString();
+              router.push(`/schedule${search ? `?${search}` : ""}`, { scroll: false });
+            }}
+          >
             <option value="">Alle hendelser</option>
             {Object.entries(eventTypes).map(([key, label]) => (
               <option key={key} value={key}>
@@ -96,8 +106,7 @@ function ScheduleView({
               </option>
             ))}
           </select>
-          <button className="button secondary">Vis</button>
-        </Form>
+        </div>
       </div>
       <QueryState query={query} title="Terminlisten kunne ikke hentes">
         {() => (

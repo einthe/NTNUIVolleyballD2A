@@ -68,7 +68,7 @@ test("account palette changes preserve private navigation and synchronize betwee
   await expect(page.locator(".team-count")).toHaveCount(1);
   const other = await context.newPage();
   await other.goto("/roster");
-  await expect(other.getByRole("heading", { name: "Laget vårt.", exact: true })).toBeVisible();
+  await expect(other.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
   await page.locator(".account-summary").click();
   const selector = page.getByRole("combobox", { name: "Fargepalett" });
   await selector.selectOption("petrol");
@@ -79,7 +79,7 @@ test("account palette changes preserve private navigation and synchronize betwee
   await page.locator(".account-summary").click();
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Lag", exact: true })
+    .getByRole("link", { name: "Stall", exact: true })
     .click();
   await expect(page.getByRole("heading", { name: player.name, exact: true })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-palette", "petrol");

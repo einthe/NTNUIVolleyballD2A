@@ -5,4 +5,4 @@ tests/
 playwright*.ts
 playwright-report/
 test-results/
-.next-demo/
+.next-*/

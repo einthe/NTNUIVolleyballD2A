@@ -62,7 +62,7 @@ export default function Feed() {
           <ContentBoundary title="Terminlisten kunne ikke hentes" href="/schedule">
             <UpcomingEvents />
           </ContentBoundary>
-          <ContentBoundary title="Lagoversikten kunne ikke hentes" href="/roster">
+          <ContentBoundary title="Stalloversikten kunne ikke hentes" href="/roster">
             <TeamSummary />
           </ContentBoundary>
         </aside>
@@ -167,7 +167,7 @@ function TeamSummary() {
   const { scope } = useTeam();
   const query = useQuery(queries.roster(scope));
   return (
-    <QueryState query={query} title="Lagoversikten kunne ikke hentes">
+    <QueryState query={query} title="Stalloversikten kunne ikke hentes">
       {(roster) => <TeamCount roster={roster} />}
     </QueryState>
   );
@@ -180,7 +180,7 @@ function TeamCount({ roster }: { roster: import("@/lib/domain").Player[] }) {
         <span>spillere</span>
       </div>
       <Link className="inline-link" href="/roster">
-        Se laget <ArrowUpRight size={16} />
+        Se stallen <ArrowUpRight size={16} />
       </Link>
     </section>
   );

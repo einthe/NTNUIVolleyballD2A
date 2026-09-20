@@ -1,0 +1,144 @@
+import { test, expect, type Locator, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { demoPassword } from "../../scripts/demo-seed.mjs";
+
+async function coach(page: Page) {
+  await page.goto("/auth/sign-in");
+  await page.getByLabel("E-postadresse").fill("coach@demo.test");
+  await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
+  await page.getByRole("button", { name: "Logg inn", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+}
+
+async function squareCourt(visual: Locator) {
+  const court = visual.locator(".court");
+  await expect(court).toBeVisible();
+  const shape = await court.evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      line: parseFloat(getComputedStyle(node, "::before").top),
+      innerHeight: node.clientHeight,
+    };
+  });
+  expect(Math.abs(shape.width - shape.height)).toBeLessThan(1);
+  expect(Math.abs(shape.line - shape.innerHeight / 3)).toBeLessThan(1);
+  const libero = visual.locator(".libero-card");
+  if (await libero.count()) {
+    await expect(libero.locator(".jersey")).toBeVisible();
+    const a = (await court.boundingBox())!;
+    const b = (await libero.boundingBox())!;
+    expect(b.x).toBeGreaterThanOrEqual(a.x + a.width);
+    expect(Math.abs(b.y + b.height / 2 - (a.y + a.height / 2))).toBeLessThan(1);
+  }
+  const fits = await court.locator(".court-slot").evaluateAll((slots) =>
+    slots.every((slot) => {
+      const bounds = slot.getBoundingClientRect();
+      return Array.from(slot.children).every((child) => {
+        const rect = child.getBoundingClientRect();
+        return !rect.height || (rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1);
+      });
+    }),
+  );
+  expect(fits).toBe(true);
+}
+
+test("square courts, side libero and setup controls keep their spatial layout", async ({
+  page,
+}, info) => {
+  await coach(page);
+  await squareCourt(page.locator(".lineup-visual"));
+  await page.goto("/schedule");
+  await page.getByRole("heading", { name: "NTNUI – Fjordvik", exact: true }).click();
+  await squareCourt(page.locator(".match-lineup .lineup-visual"));
+  await page.getByRole("link", { name: "Ny versjon", exact: true }).click();
+  await expect(page.getByLabel("Posisjon 4", { exact: true })).toBeVisible();
+  const positions = await page.locator(".lineup-selection select").evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return { name: node.getAttribute("name"), x: rect.x, y: rect.y };
+    }),
+  );
+  expect(positions.map((p) => p.name)).toEqual([
+    "slot_4",
+    "slot_3",
+    "slot_2",
+    "slot_5",
+    "slot_6",
+    "slot_1",
+  ]);
+  expect(positions[0].y).toBe(positions[1].y);
+  expect(positions[1].y).toBe(positions[2].y);
+  expect(positions[3].y).toBe(positions[4].y);
+  expect(positions[4].y).toBe(positions[5].y);
+  for (let i = 0; i < 3; i++) expect(positions[i].x).toBe(positions[i + 3].x);
+  expect(positions[3].y).toBeGreaterThan(positions[0].y);
+  await squareCourt(page.locator(".lineup-preview .lineup-visual"));
+  await page.screenshot({ path: info.outputPath("lineup-editor.png"), fullPage: true });
+  if (info.project.name === "mobile") {
+    await page.setViewportSize({ width: 320, height: 740 });
+    await squareCourt(page.locator(".lineup-preview .lineup-visual"));
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("responsibility colors remain readable in every palette and roster is named Stall", async ({
+  page,
+}, info) => {
+  await coach(page);
+  const roles = page.locator(".role-post");
+  await expect(roles).toHaveCount(2);
+  await expect(roles.filter({ hasText: "Pizza etter trening" }).locator(".badge")).toContainText(
+    "Sosialansvarlig",
+  );
+  const colors = await roles.evaluateAll((nodes) =>
+    nodes.map((node) => getComputedStyle(node).borderLeftColor),
+  );
+  expect(new Set(colors).size).toBe(2);
+  for (const palette of ["ntnui", "petrol", "midnight", "plum"]) {
+    await page.locator(".account-summary").click();
+    await page.getByRole("combobox", { name: "Fargepalett" }).selectOption(palette);
+    await page.locator(".account-summary").click();
+    expect(
+      (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+    ).toEqual([]);
+  }
+  await page.screenshot({ path: info.outputPath("responsibility-posts.png"), fullPage: true });
+  await page
+    .getByRole("navigation", { name: "Hovedmeny" })
+    .getByRole("link", { name: "Stall", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
+  await expect(page).toHaveTitle(/Stall/);
+});
+
+test("schedule filters immediately, preserves history and resets pagination without reloading", async ({
+  page,
+}) => {
+  await coach(page);
+  await page.goto("/schedule?history=1&page=2");
+  await page.evaluate(() => {
+    (window as unknown as Record<string, unknown>).filterMarker = true;
+  });
+  const filter = page.getByRole("combobox", { name: "Type hendelse" });
+  await expect(page.getByRole("button", { name: "Vis", exact: true })).toHaveCount(0);
+  await filter.selectOption("match");
+  await expect(page).toHaveURL(/\/schedule\?history=1&type=match$/);
+  await expect(page.getByRole("heading", { name: "NTNUI – Vestbyen", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Kommende", exact: true }).click();
+  await expect(page.locator(".event-card")).toHaveCount(3);
+  await filter.selectOption("practice");
+  await expect(page.locator(".event-card")).toHaveCount(2);
+  await expect(
+    page.getByRole("heading", { name: "Trening: mottak og forsvar", exact: true }),
+  ).toBeVisible();
+  await filter.selectOption("");
+  await expect(page.locator(".event-card")).toHaveCount(11);
+  await page.goBack();
+  await expect(filter).toHaveValue("practice");
+  await expect(page.locator(".event-card")).toHaveCount(2);
+  expect(
+    await page.evaluate(() => (window as unknown as Record<string, unknown>).filterMarker),
+  ).toBe(true);
+});

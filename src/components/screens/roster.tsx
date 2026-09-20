@@ -15,7 +15,7 @@ export default function Roster() {
   const { profile, scope } = useTeam();
   const query = useQuery(queries.roster(scope));
   return (
-    <QueryState query={query} title="Lagoversikten kunne ikke hentes">
+    <QueryState query={query} title="Stalloversikten kunne ikke hentes">
       {(roster) => <RosterView roster={roster} profile={profile} params={params} />}
     </QueryState>
   );
@@ -39,7 +39,7 @@ function RosterView({
   );
   return (
     <>
-      <PageHeading title="Laget vårt">
+      <PageHeading title="Stall">
         <span className="member-count">
           <Users size={17} /> {allPlayers.length} spillere · {coaches.length} trenere
         </span>
@@ -53,7 +53,7 @@ function RosterView({
           <input
             id="roster-search"
             name="q"
-            placeholder="Søk i laget …"
+            placeholder="Søk i stallen …"
             defaultValue={params.q}
             maxLength={100}
           />

@@ -1,4 +1,7 @@
 :root {
+  --pink: #e4acc9;
+  --teal: #8dd8d0;
+  --orange: #e5b184;
   color-scheme: dark;
   --bg: #101411;
   --panel: #191e1a;
@@ -273,6 +276,19 @@ small {
 }
 .tone-gold {
   color: var(--gold);
+}
+.tone-pink {
+  color: var(--pink);
+}
+.tone-teal {
+  color: var(--teal);
+}
+.tone-orange {
+  color: var(--orange);
+}
+.badge:is(.tone-pink, .tone-teal, .tone-orange) {
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
 }
 .tone-muted {
   color: var(--muted);
@@ -741,7 +757,15 @@ small {
   padding: 0 23px 18px;
 }
 .role-post {
-  border-top-color: var(--theme-border, #626d49);
+  border-color: color-mix(in srgb, var(--role-color) 40%, var(--border));
+  border-left: 4px solid var(--role-color);
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--role-color) 12%, transparent),
+      transparent 75%
+    ),
+    var(--panel);
 }
 .lineup-post {
   border-color: var(--theme-border, #40533a);
@@ -1032,20 +1056,6 @@ textarea {
 .post-content h1 {
   font-size: 26px;
   margin-bottom: 14px;
-}
-.lineup-visual.with-libero {
-  grid-template-columns: minmax(0, 1fr) 100px;
-  align-items: start;
-}
-.with-libero .libero-card {
-  flex-direction: column;
-  text-align: center;
-  margin-top: 12px;
-  padding: 18px 10px;
-  gap: 10px;
-}
-.with-libero .libero-number {
-  font-size: 24px;
 }
 .form-grid {
   display: grid;
@@ -1394,14 +1404,38 @@ legend {
 .lineup-preview h2 {
   margin: 10px 0 25px;
 }
+.lineup-selection {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 10px;
+}
+.lineup-selection label {
+  min-width: 0;
+}
+.lineup-selection select {
+  min-width: 0;
+  padding: 10px 6px;
+  font-size: 12px;
+}
 .lineup-visual {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
   gap: 15px;
-  margin: 20px 0;
+  margin: 38px auto 20px;
+  width: 100%;
+  max-width: 620px;
+  container-type: inline-size;
+}
+.lineup-visual.compact {
+  max-width: 520px;
+}
+.lineup-visual.with-libero {
+  grid-template-columns: minmax(0, 1fr) 80px;
 }
 .court-wrap {
-  padding-top: 8px;
+  position: relative;
+  min-width: 0;
 }
 .court-net {
   height: 16px;
@@ -1421,10 +1455,13 @@ legend {
       var(--theme-art, #92a47e55) 5px
     );
   border-top: 2px solid var(--theme-text, #b4c69e);
-  position: relative;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  margin: 0 -6px 4px;
+  margin: 0 -3px 4px;
 }
 .court-net span {
   font-size: 7px;
@@ -1439,19 +1476,19 @@ legend {
 .court {
   background: linear-gradient(var(--theme-court, #263c27), var(--theme-court-end, #203022));
   border: 2px solid var(--theme-art, #9aaf8055);
-  border-top: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 2fr);
+  aspect-ratio: 1;
+  width: 100%;
   position: relative;
-  padding: 10px 4px 5px;
-  row-gap: 16px;
 }
 .court:before {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  top: 43%;
+  top: calc(100% / 3);
   height: 1px;
   background: var(--theme-art, #a4bc8755);
 }
@@ -1461,10 +1498,11 @@ legend {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  min-height: 106px;
+  min-height: 0;
+  min-width: 0;
   justify-content: center;
-  padding: 6px 3px;
-  gap: 4px;
+  padding: 3px;
+  gap: 3px;
   z-index: 1;
 }
 .rotation-number {
@@ -1475,8 +1513,10 @@ legend {
   top: 8px;
 }
 .jersey {
-  width: 44px;
-  height: 40px;
+  width: clamp(24px, 9cqw, 44px);
+  height: auto;
+  aspect-ratio: 1.1;
+  flex-shrink: 0;
   background: var(--theme-accent, #c7df89);
   color: var(--theme-ink, #243517);
   clip-path: polygon(
@@ -1498,17 +1538,21 @@ legend {
   display: grid;
   place-items: center;
   font-family: var(--display);
-  font-size: 18px;
+  font-size: clamp(12px, 4cqw, 18px);
   font-weight: 800;
   padding-top: 5px;
   filter: drop-shadow(0 3px 2px #0003);
 }
 .court-slot strong {
-  font-size: 9px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: clamp(8px, 2cqw, 11px);
   font-weight: 600;
   max-width: 100%;
   overflow-wrap: anywhere;
-  line-height: 1.5;
+  line-height: 1.2;
 }
 .court-slot small {
   font-size: 8px;
@@ -1516,24 +1560,38 @@ legend {
 }
 .libero-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 13px;
+  text-align: center;
+  align-self: center;
+  min-width: 0;
+  gap: 8px;
   background: var(--theme-surface, #232b20);
   border: 1px solid var(--theme-border, #47523c);
   border-radius: 6px;
-  padding: 11px 14px;
+  padding: 12px 5px;
 }
 .libero-card .eyebrow {
   font-size: 8px;
   color: var(--muted);
 }
-.libero-number {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--accent);
-}
 .libero-card strong {
-  font-size: 11px;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+@container (max-width: 340px) {
+  .court-slot small {
+    display: none;
+  }
+  .court-slot {
+    gap: 2px;
+    padding: 2px;
+  }
+  .rotation-number {
+    left: 3px;
+    top: 2px;
+    font-size: 7px;
+  }
 }
 .lineup-text {
   font-size: 10px;
@@ -2552,7 +2610,7 @@ legend {
 }
 @media (max-width: 480px) {
   .lineup-visual.with-libero {
-    grid-template-columns: minmax(0, 1fr) 70px;
+    grid-template-columns: minmax(0, 1fr) 60px;
     gap: 9px;
   }
   .with-libero .libero-card {
@@ -2774,9 +2832,14 @@ legend {
     grid-template-columns: 1fr;
     gap: 18px;
   }
-  .lineup-editor-grid .form-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  .lineup-selection {
+    gap: 20px 8px;
+  }
+  .lineup-selection label {
+    font-size: 11px;
+  }
+  .lineup-selection select {
+    font-size: 11px;
   }
   .editor-footer {
     flex-wrap: wrap;
@@ -2794,9 +2857,6 @@ legend {
   .match-lineup .section-title h2 {
     font-size: 17px;
   }
-  .court-slot {
-    min-height: 97px;
-  }
   .court-slot strong {
     font-size: 8px;
   }
@@ -2805,11 +2865,6 @@ legend {
   }
   .rotation-number {
     left: 3px;
-  }
-  .jersey {
-    width: 39px;
-    height: 37px;
-    font-size: 16px;
   }
   .checkbox-grid {
     grid-template-columns: 1fr;
