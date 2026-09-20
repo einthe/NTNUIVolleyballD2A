@@ -2001,7 +2001,7 @@ legend {
 .auth-layout {
   min-height: 100svh;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
 }
 .auth-story {
   padding: 46px 55px 25px;

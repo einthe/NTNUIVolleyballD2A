@@ -43,12 +43,42 @@ export function Shell({ children }: { children: ReactNode }) {
   const params = useSearchParams();
   const unread = notifications.filter((n) => !n.read_at).length;
   const drawer = useRef<HTMLDialogElement>(null);
+  const accountMenu = useRef<HTMLDetailsElement>(null);
+  const notificationMenu = useRef<HTMLDetailsElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => drawer.current?.close();
   const route = `${pathname}?${params.toString()}`;
   useEffect(() => {
     drawer.current?.close();
+    if (accountMenu.current) accountMenu.current.open = false;
+    if (notificationMenu.current) notificationMenu.current.open = false;
   }, [route]);
+  useEffect(() => {
+    const menus = [accountMenu.current, notificationMenu.current];
+    const dismissOutside = (event: Event) => {
+      if (!(event.target instanceof Node)) return;
+      for (const menu of menus) {
+        if (menu?.open && !menu.contains(event.target)) menu.open = false;
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      for (const menu of menus) {
+        if (!menu?.open) continue;
+        const focusInside = menu.contains(document.activeElement);
+        menu.open = false;
+        if (focusInside) menu.querySelector("summary")?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside, true);
+    document.addEventListener("focusin", dismissOutside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside, true);
+      document.removeEventListener("focusin", dismissOutside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 761px)");
     const resized = () => {
@@ -137,7 +167,7 @@ export function Shell({ children }: { children: ReactNode }) {
                       : "Innlegg"}
           </span>
           <div className="topbar-controls">
-            <details className="notification-menu">
+            <details ref={notificationMenu} className="notification-menu">
               <summary className="icon-button" aria-label={`Varsler, ${unread} uleste`}>
                 <Bell size={20} />
                 {unread > 0 && <span className="notification-dot" />}
@@ -188,7 +218,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 ))}
               </div>
             </details>
-            <details className="account-menu">
+            <details ref={accountMenu} className="account-menu">
               <summary className="account-summary" aria-label={`Konto: ${profile.full_name}`}>
                 <Avatar
                   name={profile.full_name}
@@ -299,7 +329,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
           </Link>
         </>
       )}
-      <div className="sidebar-bottom">
+      <div className="sidebar-bottom" hidden>
         <div className="team-note">
           <VolleyballMark />
         </div>
