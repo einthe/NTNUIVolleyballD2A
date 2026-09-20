@@ -14,6 +14,7 @@ import { eventDateLabel, importedMatchStatus } from "@/lib/event-dates";
 import { BackLink, Badge } from "@/components/ui";
 import { Court } from "@/components/court";
 import { DeleteButton } from "@/components/forms";
+import { LinkedText } from "@/components/linked-text";
 export default function EventPage() {
   const { id } = useParams<{ id: string }>();
   const { scope } = useTeam();
@@ -89,7 +90,11 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
             </div>
           </div>
         )}
-        {event.description && <p className="post-body">{event.description}</p>}
+        {event.description && (
+          <p className="post-body">
+            <LinkedText text={event.description} />
+          </p>
+        )}
         {imported && event.external_source_url && (
           <p className="muted">
             <a

@@ -13,11 +13,13 @@ import { leaveAuthContext } from "@/lib/cache/auth-events";
 export function Submit({
   children = "Lagre endringer",
   secondary = false,
+  disabled = false,
   name,
   value,
 }: {
   children?: ReactNode;
   secondary?: boolean;
+  disabled?: boolean;
   name?: string;
   value?: string;
 }) {
@@ -26,7 +28,7 @@ export function Submit({
     <button
       type="submit"
       className={`button ${secondary ? "secondary" : ""}`}
-      disabled={pending}
+      disabled={pending || disabled}
       name={name}
       value={value}
     >

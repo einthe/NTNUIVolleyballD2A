@@ -1,4 +1,5 @@
 import "server-only";
+import type { VolunteerWorkPoints } from "@/lib/volunteer-work-points";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient, isConfigured } from "@/lib/supabase/server";
@@ -169,4 +170,35 @@ export async function getNotifications(account?: Profile): Promise<Notification[
     .limit(50);
   if (error) throw new Error("Kunne ikke hente varsler.");
   return data as Notification[];
+}
+
+export async function getVolunteerWorkPoints(account?: Profile): Promise<VolunteerWorkPoints[]> {
+  if (!account) await requireAccount();
+  const db = await createClient();
+  const { data, error } = await db
+    .from("profiles")
+    .select(
+      "id,full_name,volunteer_work_points!volunteer_work_points_player_user_id_fkey(points,version)",
+    )
+    .eq("account_status", "approved")
+    .eq("base_role", "player");
+  if (error) throw new Error("Kunne ikke hente dugnadspoeng.");
+  const players = data as unknown as {
+    id: string;
+    full_name: string;
+    volunteer_work_points: { points: number; version: number } | null;
+  }[];
+  return players
+    .map((player) => ({
+      id: player.id,
+      full_name: player.full_name,
+      points: player.volunteer_work_points?.points ?? 0,
+      version: player.volunteer_work_points?.version ?? 0,
+    }))
+    .sort(
+      (a, b) =>
+        b.points - a.points ||
+        a.full_name.localeCompare(b.full_name, "nb") ||
+        a.id.localeCompare(b.id),
+    );
 }

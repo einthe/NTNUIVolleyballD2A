@@ -239,6 +239,33 @@ small {
 .standings-team-highlight th[scope="row"] {
   color: var(--accent);
 }
+.points-table th[scope="row"] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.points-form {
+  display: grid;
+  grid-template-columns: minmax(60px, 90px) auto;
+  justify-content: end;
+  gap: 8px;
+}
+.points-form input {
+  text-align: right;
+  min-width: 0;
+}
+.points-form .button {
+  padding: 8px 12px;
+}
+.points-form .message {
+  grid-column: 1 / -1;
+  text-align: left;
+}
+@media (max-width: 480px) {
+  .points-table th,
+  .points-table td {
+    padding: 12px 8px;
+  }
+}
 .standings-source {
   display: flex;
   flex-wrap: wrap;
@@ -849,6 +876,11 @@ small {
   font-size: 12px;
   line-height: 1.9;
 }
+.post-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .post-footer {
   margin: 0 23px;
   border-top: 1px solid var(--border);
@@ -1241,6 +1273,16 @@ legend {
   gap: 10px;
   font-size: 11px;
   min-height: 30px;
+}
+.volunteer-assignment-list .checkbox-label {
+  min-width: 0;
+}
+.assignment-points {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
 }
 .message {
   padding: 13px 16px;

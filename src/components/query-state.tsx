@@ -15,7 +15,7 @@ export function QueryState<T>({
     return query.isError ? (
       <section className="card empty-state" role="alert">
         <h2>{title}</h2>
-        <button className="button secondary" onClick={() => void query.refetch()}>
+        <button type="button" className="button secondary" onClick={() => void query.refetch()}>
           Prøv igjen
         </button>
       </section>
@@ -29,7 +29,7 @@ export function QueryState<T>({
       {query.isError && (
         <p className="message error" role="alert">
           Kunne ikke oppdatere. Viser sist hentede innhold.{" "}
-          <button className="text-button" onClick={() => void query.refetch()}>
+          <button type="button" className="text-button" onClick={() => void query.refetch()}>
             Prøv igjen
           </button>
         </p>

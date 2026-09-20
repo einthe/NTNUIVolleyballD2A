@@ -6,6 +6,7 @@ test("private pages redirect anonymous visitors and do not reveal team data", as
     "/schedule",
     "/standings",
     "/roster",
+    "/volunteer_work_points",
     "/admin/users",
     "/admin/notifications",
     "/posts/new",

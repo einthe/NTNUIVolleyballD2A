@@ -258,3 +258,9 @@ Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/mi
 9. Run the PostgreSQL authorization tests and the full browser workflow against a staging project before launch. Review Supabase's policy/table grants and confirm `post-images.public = false` after any subsequent migration.
 
 Source implementation references: [Next.js Proxy](https://nextjs.org/docs/app/getting-started/proxy), [Supabase server-side clients](https://supabase.com/docs/guides/auth/server-side/creating-a-client), and [Supabase CLI local development](https://supabase.com/docs/guides/local-development/cli/getting-started).
+
+## Dugnadspoeng
+
+`/volunteer_work_points` lists approved players by points, highest first, highlighting the signed-in player's row. New players start at 0; totals are non-negative whole numbers. When creating or editing a Dugnad, the assignment list shows these totals beside each player and sorts from lowest to highest. Administrators and players assigned **Dugnadsansvarlig** can set or reduce totals. Database permissions enforce this independently of the UI, and version checks prevent stale forms from overwriting newer totals.
+
+Apply `supabase/migrations/202609200005_volunteer_work_points.sql` before deploying this feature. The local demo applies it automatically on restart and includes fictional totals. Use `lucas@demo.test` (Dugnadsansvarlig) or `admin@demo.test` to edit them, with the usual demo password `DemoVolleyball123!`.

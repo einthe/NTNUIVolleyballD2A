@@ -1,20 +1,27 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { eventTypes, type EventType, type Player, type TeamEvent } from "@/lib/domain";
+import { useQuery } from "@tanstack/react-query";
+import { eventTypes, type EventType, type TeamEvent } from "@/lib/domain";
+import { queries } from "@/lib/cache/queries";
 import { localInput } from "@/lib/dates";
 import { ActionForm, Submit } from "./forms";
+import { useTeam } from "./team-provider";
+import { QueryState } from "./query-state";
 export function EventForm({
   event: initialEvent,
   allowed,
-  players,
 }: {
   event?: TeamEvent;
   allowed: EventType[];
-  players: Player[];
 }) {
   const [event] = useState(initialEvent);
   const [kind, setKind] = useState<EventType>(event?.event_type ?? allowed[0]);
+  const { scope } = useTeam();
+  const pointsQuery = useQuery({
+    ...queries.volunteerWorkPoints(scope),
+    enabled: kind === "volunteer_work",
+  });
   return (
     <ActionForm className="card editor form-stack">
       <input type="hidden" name="action" value="event" />
@@ -139,29 +146,49 @@ export function EventForm({
           <p className="field-hint">
             Dette er oppgavefordeling. Påmelding og oppmøte håndteres i Spond.
           </p>
-          <div className="checkbox-grid">
-            {players.map((player) => (
-              <label className="checkbox-label" key={player.id}>
-                <input
-                  type="checkbox"
-                  name="assignments"
-                  value={player.id}
-                  defaultChecked={event?.volunteer_assignments?.some(
-                    (a) => a.player_user_id === player.id,
-                  )}
-                />
-                {player.full_name}
-              </label>
-            ))}
-          </div>
-          {!players.length && <p className="muted">Ingen godkjente spillere ennå.</p>}
+          <QueryState query={pointsQuery} title="Dugnadspoengene kunne ikke hentes">
+            {(players) => (
+              <>
+                <div className="checkbox-grid volunteer-assignment-list">
+                  {[...players]
+                    .sort(
+                      (a, b) =>
+                        a.points - b.points ||
+                        a.full_name.localeCompare(b.full_name, "nb") ||
+                        a.id.localeCompare(b.id),
+                    )
+                    .map((player) => (
+                      <label className="checkbox-label" key={player.id}>
+                        <input
+                          type="checkbox"
+                          name="assignments"
+                          value={player.id}
+                          aria-labelledby={`assignment-player-${player.id}`}
+                          aria-describedby={`assignment-points-${player.id}`}
+                          defaultChecked={event?.volunteer_assignments?.some(
+                            (a) => a.player_user_id === player.id,
+                          )}
+                        />
+                        <span id={`assignment-player-${player.id}`}>{player.full_name}</span>{" "}
+                        <span id={`assignment-points-${player.id}`} className="assignment-points">
+                          {player.points.toLocaleString("nb-NO")} poeng
+                        </span>
+                      </label>
+                    ))}
+                </div>
+                {!players.length && <p className="muted">Ingen godkjente spillere ennå.</p>}
+              </>
+            )}
+          </QueryState>
         </fieldset>
       )}
       <div className="editor-footer">
         <Link className="button secondary" href={event ? `/schedule/${event.id}` : "/schedule"}>
           Avbryt
         </Link>
-        <Submit>{event ? "Lagre endringer" : "Opprett hendelse"}</Submit>
+        <Submit disabled={kind === "volunteer_work" && pointsQuery.data === undefined}>
+          {event ? "Lagre endringer" : "Opprett hendelse"}
+        </Submit>
       </div>
     </ActionForm>
   );

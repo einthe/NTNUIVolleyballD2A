@@ -62,6 +62,11 @@ export async function seedDemo({ db, addUser, files }) {
       primary,
       secondary: email === "jonas" ? ["opposite", "libero"] : [],
     });
+    await rpc(admin, "set_volunteer_work_points", {
+      id: player.id,
+      points: [12, 8, 16, 4, 10, 6, 20, 0, 8, 2, 14, 6][players.length],
+      expected_version: 0,
+    });
     players.push(player);
   }
   await user("pending", "Sander Nygaard");

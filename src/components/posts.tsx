@@ -18,6 +18,7 @@ import { Avatar, Badge } from "./ui";
 import { Court } from "./court";
 import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
+import { LinkedText } from "./linked-text";
 export function PostCard({
   post,
   profile,
@@ -84,7 +85,11 @@ export function PostCard({
             </Link>
           )}
         </Heading>
-        {post.body && <p className="post-body">{post.body}</p>}
+        {post.body && (
+          <p className="post-body">
+            <LinkedText text={post.body} />
+          </p>
+        )}
         {lineup && revision && (
           <>
             <p className="lineup-match-meta">

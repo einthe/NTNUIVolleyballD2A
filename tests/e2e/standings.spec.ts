@@ -61,7 +61,7 @@ test.describe("private standings", () => {
     const nav = page.locator(".sidebar:visible, .mobile-sidebar:visible");
     const mainLinks = await nav
       .locator(
-        'a[href="/feed"]:not(.brand), a[href="/schedule"], a[href="/standings"], a[href="/roster"]',
+        'a[href="/feed"]:not(.brand), a[href="/schedule"], a[href="/standings"], a[href="/roster"], a[href="/volunteer_work_points"]',
       )
       .allTextContents();
     expect(mainLinks.map((label) => label.trim())).toEqual([
@@ -69,6 +69,7 @@ test.describe("private standings", () => {
       "Terminliste",
       "Tabell",
       "Tropp",
+      "Dugnadspoeng",
     ]);
     await page.getByRole("link", { name: "Tabell", exact: true }).click();
     await expect(page).toHaveURL(/\/standings$/);

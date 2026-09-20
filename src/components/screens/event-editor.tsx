@@ -23,8 +23,7 @@ export function EditEvent() {
   );
 }
 function EventEditor({ event }: { event?: TeamEvent }) {
-  const { profile, roles, scope } = useTeam();
-  const roster = useQuery(queries.roster(scope));
+  const { profile, roles } = useTeam();
   const allowed = (Object.keys(eventTypes) as EventType[]).filter((type) =>
     canManageEvent(profile, roles, type, event?.created_by_user_id),
   );
@@ -47,15 +46,7 @@ function EventEditor({ event }: { event?: TeamEvent }) {
       {event?.external_source === "volleyballlive" ? (
         <ImportedMatchTitleForm event={event} />
       ) : (
-        <QueryState query={roster} title="Spillerne kunne ikke hentes">
-          {(players) => (
-            <EventForm
-              event={event}
-              allowed={event ? [event.event_type] : allowed}
-              players={players.filter((p) => p.base_role === "player")}
-            />
-          )}
-        </QueryState>
+        <EventForm event={event} allowed={event ? [event.event_type] : allowed} />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Player, Post, TeamEvent, Lineup, Notification } from "@/lib/domain";
 import type { Access, AdminUsers, NotificationRule, PostList, Change } from "./contract";
+import type { VolunteerWorkPoints } from "@/lib/volunteer-work-points";
 import type { Standings } from "@/lib/standings";
 
 export class AccessChanged extends Error {
@@ -13,6 +14,7 @@ export const cacheTimes = {
   posts: 30_000,
   events: 60_000,
   roster: 300_000,
+  volunteerWorkPoints: 60_000,
   standings: 24 * 60 * 60_000,
   lineups: 30_000,
   notifications: 15_000,
@@ -27,6 +29,7 @@ export const keys = {
   events: (scope: string) => ["team", scope, "events"] as const,
   event: (scope: string, id: string) => ["team", scope, "event", id] as const,
   roster: (scope: string) => ["team", scope, "roster"] as const,
+  volunteerWorkPoints: (scope: string) => ["team", scope, "volunteer_work_points"] as const,
   standings: (scope: string) => ["team", scope, "standings"] as const,
   lineups: (scope: string) => ["team", scope, "lineups"] as const,
   notifications: (scope: string) => ["team", scope, "notifications"] as const,
@@ -52,6 +55,12 @@ async function read<T>(
   return result.data as T;
 }
 export const queries = {
+  volunteerWorkPoints: (scope: string) =>
+    queryOptions({
+      queryKey: keys.volunteerWorkPoints(scope),
+      queryFn: ({ signal }) => read<VolunteerWorkPoints[]>(scope, "volunteer_work_points", signal),
+      staleTime: cacheTimes.volunteerWorkPoints,
+    }),
   standings: (scope: string) =>
     queryOptions({
       queryKey: keys.standings(scope),
@@ -189,7 +198,11 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
           !!(q.state.data as Post | undefined)?.lineup_id,
       });
       break;
+    case "volunteer_work_points":
+      add(keys.volunteerWorkPoints(scope));
+      break;
     case "user":
+      add(keys.volunteerWorkPoints(scope));
     case "positions":
       add(keys.roster(scope), keys.users(scope));
       break;

@@ -29,6 +29,7 @@ const links = [
   { href: "/schedule", label: "Terminliste", icon: CalendarDays },
   { href: "/standings", label: "Tabell", icon: ListOrdered },
   { href: "/roster", label: "Tropp", icon: Users },
+  { href: "/volunteer_work_points", label: "Dugnadspoeng", icon: HandHelping },
 ];
 const shortcuts = [
   { type: "match", label: "Kamper", icon: Volleyball },
@@ -158,13 +159,15 @@ export function Shell({ children }: { children: ReactNode }) {
               ? "Terminliste"
               : pathname.startsWith("/standings")
                 ? "Tabell"
-                : pathname.startsWith("/roster")
-                  ? "Tropp"
-                  : pathname.startsWith("/admin")
-                    ? "Administrasjon"
-                    : pathname === "/profile"
-                      ? "Min profil"
-                      : "Innlegg"}
+                : pathname.startsWith("/volunteer_work_points")
+                  ? "Dugnadspoeng"
+                  : pathname.startsWith("/roster")
+                    ? "Tropp"
+                    : pathname.startsWith("/admin")
+                      ? "Administrasjon"
+                      : pathname === "/profile"
+                        ? "Min profil"
+                        : "Innlegg"}
           </span>
           <div className="topbar-controls">
             <details ref={notificationMenu} className="notification-menu">

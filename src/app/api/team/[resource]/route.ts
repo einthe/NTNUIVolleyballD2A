@@ -8,6 +8,7 @@ import {
   getEvents,
   getEvent,
   getRoster,
+  getVolunteerWorkPoints,
   getLineup,
   getLineupById,
   getNotifications,
@@ -82,6 +83,9 @@ export async function GET(
       }
       case "event":
         data = await getEvent(id(), profile);
+        break;
+      case "volunteer_work_points":
+        data = await getVolunteerWorkPoints(profile);
         break;
       case "roster":
         data = await getRoster(profile);

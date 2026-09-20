@@ -1,4 +1,5 @@
 "use server";
+import { volunteerWorkPointsSchema } from "@/lib/volunteer-work-points";
 import { z } from "zod";
 import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
@@ -170,6 +171,14 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         }
       }
       destination = `/posts/${id}`;
+    } else if (kind === "volunteer_work_points") {
+      change.id = await rpc("set_volunteer_work_points", {
+        data: volunteerWorkPointsSchema.parse({
+          id: text("id"),
+          points: number("points"),
+          expected_version: number("expected_version"),
+        }),
+      });
     } else if (kind === "match-title") {
       const input = z
         .object({
