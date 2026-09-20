@@ -7,6 +7,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Email/password registration, email confirmation callback, password recovery, and pending/approved/rejected/disabled accounts.
 - Admin approval, rejection, deactivation/reactivation, player/coach roles, jersey numbers, secondary roles, and player positions. Admin promotion is **only** a direct database operation.
 - Paginated posts, historical author/role snapshots, own-post editing, admin moderation, and optional private images with descriptions.
+- Threaded comments and GIPHY meme reactions on post/event details, with author editing and admin moderation. See [discussion setup](docs/discussions.md) for the required migration and API key.
 - Upcoming and archived events, category permissions, match opponents/results, and structured volunteer assignments. No local attendance/RSVP system.
 - A roster without email addresses or admin accounts; coach/admin position editing.
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.

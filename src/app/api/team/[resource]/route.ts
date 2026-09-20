@@ -16,6 +16,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { accessScope } from "@/lib/cache/contract";
 import { eventTypes, uuid } from "@/lib/domain";
+import { discussionTargetSchema } from "@/lib/discussions";
 import { getStandings } from "@/server/standings";
 import { StandingsError } from "@/server/standings/config";
 
@@ -53,6 +54,17 @@ export async function GET(
         .parse(search.get("page") ?? 1);
     let data: unknown;
     switch (resource) {
+      case "discussion": {
+        const target = discussionTargetSchema.parse({
+          target_type: search.get("target_type"),
+          target_id: search.get("target_id"),
+        });
+        const db = await createClient();
+        const result = await db.rpc("get_discussion", { data: target });
+        if (result.error) throw new Error("Kunne ikke hente diskusjonen.");
+        data = result.data;
+        break;
+      }
       case "standings":
         data = await getStandings();
         break;

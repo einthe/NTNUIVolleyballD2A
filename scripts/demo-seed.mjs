@@ -169,6 +169,34 @@ export async function seedDemo({ db, addUser, files }) {
     title: "Baneoppsett til helgen",
     body: "Eksempelbilde for å teste innlegg med vedlegg. Alt innhold i denne lokale databasen er fiktivt.",
   });
+  const commentId = randomUUID();
+  await rpc(players[0], "save_comment", {
+    id: commentId,
+    target_type: "post",
+    target_id: imagePost,
+    body: "Jeg kan hjelpe med nettet før kampen!",
+  });
+  const replyId = randomUUID();
+  await rpc(coach, "save_comment", {
+    id: replyId,
+    target_type: "post",
+    target_id: imagePost,
+    parent_id: commentId,
+    body: "Flott, vi møtes ved banen kl. 10.",
+  });
+  await rpc(players[1], "save_comment", {
+    id: randomUUID(),
+    target_type: "post",
+    target_id: imagePost,
+    parent_id: replyId,
+    body: "Jeg blir også med.",
+  });
+  await rpc(players[0], "save_comment", {
+    id: randomUUID(),
+    target_type: "event",
+    target_id: match,
+    body: "Gleder meg til kamp!",
+  });
   const bytes = await sharp(
     Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540"><rect width="960" height="540" fill="#14262d"/><rect x="120" y="60" width="720" height="420" fill="#1c333c" stroke="#8ad9d4" stroke-width="5"/><path d="M480 60v420M360 60v420M600 60v420" stroke="#8ad9d4" stroke-width="3"/><circle cx="720" cy="360" r="48" fill="#8ad9d4"/><path d="M676 343q45-20 74 52M720 312q-15 52 47 48" stroke="#14262d" fill="none" stroke-width="4"/></svg>`,

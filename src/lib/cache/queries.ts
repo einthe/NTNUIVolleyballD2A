@@ -55,6 +55,14 @@ async function read<T>(
   return result.data as T;
 }
 export const queries = {
+  discussion: (scope: string, target: import("@/lib/discussions").DiscussionTarget) =>
+    queryOptions({
+      queryKey: [...keys.all(scope), "discussion", target.target_type, target.target_id],
+      queryFn: ({ signal }) =>
+        read<import("@/lib/discussions").DiscussionData>(scope, "discussion", signal, target),
+      staleTime: 15_000,
+      refetchInterval: 30_000,
+    }),
   volunteerWorkPoints: (scope: string) =>
     queryOptions({
       queryKey: keys.volunteerWorkPoints(scope),

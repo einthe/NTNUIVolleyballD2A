@@ -15,6 +15,7 @@ import { BackLink, Badge } from "@/components/ui";
 import { Court } from "@/components/court";
 import { DeleteButton } from "@/components/forms";
 import { LinkedText } from "@/components/linked-text";
+import { Discussion } from "@/components/discussion";
 export default function EventPage() {
   const { id } = useParams<{ id: string }>();
   const { scope } = useTeam();
@@ -192,6 +193,7 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
           </QueryState>
         </section>
       )}
+      <Discussion key={id} target={{ target_type: "event", target_id: id }} />
     </div>
   );
 }

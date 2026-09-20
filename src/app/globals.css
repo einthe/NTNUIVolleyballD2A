@@ -3049,3 +3049,244 @@ legend {
   border-color: color-mix(in srgb, var(--coach) 40%, var(--border));
   border-left-color: var(--coach);
 }
+
+/* Discussions are rendered only on post and event detail pages. */
+.discussion {
+  padding: 28px;
+  margin-top: 24px;
+  min-width: 0;
+}
+.discussion .section-title {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.discussion h2 {
+  font-size: 1.2rem;
+}
+.discussion-comments {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+  padding-top: 24px;
+}
+.comment-form {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+.comment-form textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+}
+.comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.comment-actions .text-button {
+  min-height: 36px;
+}
+.comment-threads,
+.comment-replies {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.comment-threads > .comment-thread {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+.comment {
+  min-width: 0;
+  scroll-margin-top: 100px;
+}
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.comment-header strong,
+.comment-header small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.comment-header .avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.comment-context {
+  display: block;
+  margin-top: 10px;
+}
+.comment-context a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.comment-body {
+  margin: 12px 0 4px;
+}
+.comment-replies {
+  border-left: 2px solid var(--border);
+  margin: 16px 0 0 16px;
+  padding-left: 20px;
+}
+.comment-replies > .comment-thread {
+  position: relative;
+  padding: 8px 0 16px;
+}
+.comment-replies > .comment-thread::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 24px;
+  width: 12px;
+  height: 2px;
+  background: var(--border);
+}
+.comment-thread-deep > .comment-replies {
+  margin-left: 0;
+  padding-left: 8px;
+}
+.comment-thread-deep > .comment-replies > .comment-thread::before {
+  left: -8px;
+  width: 5px;
+}
+.comment-delete {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.reaction-section-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.reaction-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+.giphy-attribution {
+  display: block;
+  width: fit-content;
+  margin: 14px 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.meme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+.meme-choice,
+.meme-reaction {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+  min-height: 100px;
+  cursor: pointer;
+}
+.meme-choice img,
+.meme-reaction img {
+  display: block;
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+  background: #121212;
+}
+.meme-reaction[aria-pressed="true"] {
+  border: 2px solid var(--accent);
+}
+.reaction-count {
+  display: block;
+  padding: 8px;
+  font-weight: 600;
+}
+.reaction-gallery {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+}
+.reaction-people {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.reaction-people li + li {
+  margin-top: 4px;
+}
+.meme-dialog {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--text);
+  overflow-y: auto;
+}
+.meme-dialog::backdrop {
+  background: rgb(0 0 0 / 65%);
+}
+.meme-dialog .section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.meme-search {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.meme-search input {
+  flex: 1;
+  min-width: 0;
+}
+.meme-pagination {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .discussion {
+    padding: 18px;
+  }
+  .comment-replies {
+    margin-left: 6px;
+    padding-left: 12px;
+  }
+  .comment-replies > .comment-thread::before {
+    left: -12px;
+    width: 7px;
+  }
+  .comment-thread-deep > .comment-replies {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .comment-thread-deep > .comment-replies > .comment-thread::before {
+    display: none;
+  }
+  .meme-dialog {
+    padding: 16px;
+  }
+  .meme-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
