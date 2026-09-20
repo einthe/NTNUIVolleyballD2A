@@ -1,6 +1,4 @@
 "use server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
@@ -16,6 +14,7 @@ import {
   uuid,
 } from "@/lib/domain";
 import { toUTC } from "@/lib/dates";
+import type { Change } from "@/lib/cache/contract";
 import type { ActionState } from "./auth-actions";
 
 function friendlyError(message: string) {
@@ -40,6 +39,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
   const nullable = (key: string) => text(key) || null;
   const number = (key: string) => (text(key) === "" ? null : Number(text(key)));
   let destination: string | undefined;
+  const change: Change = { kind, id: text("id") || undefined };
   let savedPost: Pick<ActionState, "savedPostId" | "savedPostUpdatedAt"> =
     kind === "post"
       ? {
@@ -71,6 +71,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         if (file.size > maxSize)
           return {
             ...savedPost,
+            change,
             error: `Bildet er for stort. Maksimal størrelse er ${maxSize / 1024 / 1024} MB.`,
           };
         const source = Buffer.from(await file.arrayBuffer());
@@ -86,6 +87,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       }
       const alt = z.string().max(300).parse(text("alt_text"));
       const id = await rpc("save_post", { data: input });
+      change.postId = id;
       if (image) {
         // If Storage fails after the text commits, retry this same post instead
         // of inserting a duplicate. RPC ownership and stale-edit checks still apply.
@@ -96,9 +98,9 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
           .from("post-images")
           .upload(path, image.buffer, { contentType: image.mime, upsert: false });
         if (uploaded.error) {
-          revalidatePath("/", "layout");
           return {
             ...savedPost,
+            change,
             error:
               "Teksten er lagret, men bildet kunne ikke lastes opp. Prøv igjen, eller åpne det lagrede innlegget.",
           };
@@ -115,9 +117,9 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
           });
         } catch {
           await db.storage.from("post-images").remove([path]);
-          revalidatePath("/", "layout");
           return {
             ...savedPost,
+            change,
             error:
               "Innlegget ble lagret, men bildet kunne ikke knyttes til det. Åpne innlegget fra feeden for å prøve igjen.",
           };
@@ -140,7 +142,8 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         assignments: form.getAll("assignments"),
         expected_updated_at: text("expected_updated_at") || undefined,
       });
-      destination = `/schedule/${await rpc("save_event", { data: input })}`;
+      change.id = await rpc("save_event", { data: input });
+      destination = `/schedule/${change.id}`;
     } else if (kind === "lineup") {
       const slots = Array.from({ length: 6 }, (_, i) => ({
         player_user_id: text(`slot_${i + 1}`),
@@ -159,6 +162,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         ],
       });
       await rpc("save_lineup", { data: input });
+      change.matchId = input.match_id;
       destination = `/schedule/${input.match_id}`;
     } else if (kind === "user") {
       const input = userSchema.parse({
@@ -191,6 +195,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       const id = uuid.parse(text("id"));
       const { data: media } = await db.from("post_media").select("storage_path").eq("post_id", id);
       await rpc("delete_post", { target: id });
+      change.postId = id;
       if (media?.length)
         await db.storage.from("post-images").remove(media.map((m) => m.storage_path));
       destination = "/feed";
@@ -198,7 +203,11 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       await rpc("delete_event", { target: uuid.parse(text("id")) });
       destination = "/schedule";
     } else if (kind === "remove-media") {
-      const path = await rpc("remove_media", { target: uuid.parse(text("id")) });
+      const mediaId = uuid.parse(text("id"));
+      const media = await db.from("post_media").select("post_id").eq("id", mediaId).single();
+      if (media.error) throw new Error(media.error.message);
+      change.postId = media.data.post_id;
+      const path = await rpc("remove_media", { target: mediaId });
       await db.storage.from("post-images").remove([path]);
     } else return { error: "Ukjent handling." };
   } catch (error) {
@@ -207,7 +216,5 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       return { error: error.message };
     return { ...savedPost, error: friendlyError(error instanceof Error ? error.message : "") };
   }
-  revalidatePath("/", "layout");
-  if (destination) redirect(destination);
-  return { success: "Endringen er lagret." };
+  return { success: "Endringen er lagret.", destination, change };
 }

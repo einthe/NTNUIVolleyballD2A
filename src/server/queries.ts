@@ -39,8 +39,9 @@ export async function requireAdmin() {
   if (profile.base_role !== "admin") redirect("/feed");
   return profile;
 }
-export const getRoles = cache(async (): Promise<SecondaryRole[]> => {
-  const profile = await requireAccount();
+export const getRoles = cache(async (account?: Profile): Promise<SecondaryRole[]> => {
+  const profile = account ?? (await requireAccount());
+  if (profile.base_role !== "player") return [];
   const db = await createClient();
   const { data, error } = await db
     .from("player_secondary_roles")
@@ -49,8 +50,8 @@ export const getRoles = cache(async (): Promise<SecondaryRole[]> => {
   if (error) throw new Error("Kunne ikke hente ansvarsroller.");
   return (data ?? []).map((r) => r.role_key as SecondaryRole);
 });
-export const getRoster = cache(async (): Promise<Player[]> => {
-  await requireAccount();
+export const getRoster = cache(async (account?: Profile): Promise<Player[]> => {
+  if (!account) await requireAccount();
   const db = await createClient();
   const { data, error } = await db
     .from("profiles")
@@ -63,8 +64,8 @@ export const getRoster = cache(async (): Promise<Player[]> => {
   if (error) throw new Error("Kunne ikke hente laget.");
   return data as unknown as Player[];
 });
-export async function getPosts(page = 1, kind?: string) {
-  await requireAccount();
+export async function getPosts(page = 1, kind?: string, account?: Profile) {
+  if (!account) await requireAccount();
   const db = await createClient();
   let query = db
     .from("posts")
@@ -77,8 +78,8 @@ export async function getPosts(page = 1, kind?: string) {
   if (error) throw new Error("Kunne ikke hente innlegg.");
   return { posts: data as Post[], count: count ?? 0 };
 }
-export async function getPost(id: string) {
-  await requireAccount();
+export async function getPost(id: string, account?: Profile) {
+  if (!account) await requireAccount();
   const db = await createClient();
   const { data, error } = await db
     .from("posts")
@@ -90,8 +91,8 @@ export async function getPost(id: string) {
 }
 const eventSelect =
   "*,match_details(opponent,home_away,team_sets,opponent_sets),volunteer_assignments(player_user_id)";
-export async function getEvents(past = false, kind?: string, page = 1) {
-  await requireAccount();
+export async function getEvents(past = false, kind?: string, page = 1, account?: Profile) {
+  if (!account) await requireAccount();
   const db = await createClient();
   let query = db
     .from("schedule_events")
@@ -106,8 +107,8 @@ export async function getEvents(past = false, kind?: string, page = 1) {
   if (error) throw new Error("Kunne ikke hente terminlisten.");
   return { events: data as unknown as TeamEvent[], count: count ?? 0 };
 }
-export async function getEvent(id: string) {
-  await requireAccount();
+export async function getEvent(id: string, account?: Profile) {
+  if (!account) await requireAccount();
   const db = await createClient();
   const { data, error } = await db
     .from("schedule_events")
@@ -117,8 +118,8 @@ export async function getEvent(id: string) {
   if (error) throw new Error("Kunne ikke hente arrangementet.");
   return data as unknown as TeamEvent | null;
 }
-export async function getLineup(matchId: string): Promise<Lineup | null> {
-  await requireAccount();
+export async function getLineup(matchId: string, account?: Profile): Promise<Lineup | null> {
+  if (!account) await requireAccount();
   const db = await createClient();
   const { data, error } = await db
     .from("lineups")
@@ -128,8 +129,8 @@ export async function getLineup(matchId: string): Promise<Lineup | null> {
   if (error) throw new Error("Kunne ikke hente oppstillingen.");
   return data as unknown as Lineup | null;
 }
-export async function getLineupById(id: string): Promise<Lineup | null> {
-  await requireAccount();
+export async function getLineupById(id: string, account?: Profile): Promise<Lineup | null> {
+  if (!account) await requireAccount();
   const db = await createClient();
   const { data, error } = await db
     .from("lineups")
@@ -139,8 +140,8 @@ export async function getLineupById(id: string): Promise<Lineup | null> {
   if (error) throw new Error("Kunne ikke hente oppstillingen.");
   return data as unknown as Lineup | null;
 }
-export async function getNotifications(): Promise<Notification[]> {
-  const profile = await requireAccount();
+export async function getNotifications(account?: Profile): Promise<Notification[]> {
+  const profile = account ?? (await requireAccount());
   const db = await createClient();
   const { data, error } = await db
     .from("notifications")

@@ -1,10 +1,11 @@
 "use server";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient, isConfigured } from "@/lib/supabase/server";
 import { registrationSchema } from "@/lib/domain";
 export type ActionState = {
   error?: string;
+  destination?: string;
+  change?: import("@/lib/cache/contract").Change;
   success?: string;
   savedPostId?: string;
   savedPostUpdatedAt?: string;
@@ -36,7 +37,7 @@ export async function authAction(_state: ActionState, form: FormData): Promise<A
         error:
           "Kunne ikke opprette kontoen. Prøv igjen, eller logg inn hvis du allerede har en konto.",
       };
-    redirect("/auth/pending?registered=1");
+    return { destination: "/auth/pending?registered=1" };
   }
   if (mode === "recover") {
     if (!z.email().safeParse(email).success) return { error: "Skriv en gyldig e-postadresse." };
@@ -56,7 +57,7 @@ export async function authAction(_state: ActionState, form: FormData): Promise<A
     if (!user) return { error: "Lenken er utløpt. Be om en ny lenke." };
     const { error } = await db.auth.updateUser({ password });
     if (error) return { error: "Kunne ikke endre passordet. Be om en ny lenke og prøv igjen." };
-    redirect("/feed");
+    return { destination: "/feed" };
   }
   if (mode !== "sign-in" || !z.email().safeParse(email).success || password.length > 128)
     return { error: "Kontroller e-post og passord." };
@@ -65,12 +66,13 @@ export async function authAction(_state: ActionState, form: FormData): Promise<A
     return {
       error: "Kunne ikke logge inn. Kontroller e-post og passord, og bekreft e-postadressen din.",
     };
-  redirect("/feed");
+  return { destination: "/feed" };
 }
-export async function signOut() {
+export async function signOut(): Promise<ActionState> {
   if (isConfigured()) {
     const db = await createClient();
-    await db.auth.signOut();
+    const { error } = await db.auth.signOut();
+    if (error) return { error: "Kunne ikke logge ut. Prøv igjen." };
   }
-  redirect("/auth/sign-in");
+  return { destination: "/auth/sign-in" };
 }

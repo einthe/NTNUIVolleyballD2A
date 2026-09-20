@@ -1,5 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { test, expect } from "@playwright/test";
+import { provision, login, postFields } from "./support";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import AxeBuilder from "@axe-core/playwright";
@@ -12,40 +12,6 @@ if (process.env.E2E_REQUIRE_BACKEND === "1" && !configured)
 test.use({ actionTimeout: 15000 });
 test.skip(!configured, "Requires a disposable test backend; use npm run test:e2e:local.");
 
-async function provision(role: "admin" | "coach" | "player") {
-  const service = createClient(
-    process.env.E2E_SUPABASE_URL!,
-    process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
-  const name = `${role} ${randomUUID().slice(0, 8)}`,
-    email = `${randomUUID()}@example.test`,
-    password = `Test-${randomUUID()}!`;
-  const { data, error } = await service.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name },
-  });
-  if (error) throw error;
-  const updated = await service
-    .from("profiles")
-    .update({ base_role: role, account_status: "approved" })
-    .eq("id", data.user.id);
-  if (updated.error) throw updated.error;
-  return { service, id: data.user.id, name, email, password };
-}
-async function login(page: Page, account: Awaited<ReturnType<typeof provision>>) {
-  await page.goto("/auth/sign-in");
-  await page.getByLabel("E-postadresse").fill(account.email);
-  await page.getByLabel("Passord", { exact: true }).fill(account.password);
-  await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
-}
-async function postFields(page: Page, title: string) {
-  await page.getByLabel("Tittel", { exact: true }).fill(title);
-  await page.getByLabel("Innlegg", { exact: true }).fill("En beskjed til hele laget.");
-}
 async function picture() {
   return {
     name: "trening.png",

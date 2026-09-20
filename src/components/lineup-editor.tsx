@@ -6,14 +6,15 @@ import { Court } from "./court";
 export function LineupEditor({
   matchId,
   players,
-  revision,
-  version,
+  revision: initialRevision,
+  version: initialVersion,
 }: {
   matchId: string;
   players: Player[];
   revision?: Revision;
   version: number;
 }) {
+  const [{ revision, version }] = useState({ revision: initialRevision, version: initialVersion });
   const [selection, setSelection] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       (revision?.lineup_revision_slots ?? []).map((s) => [

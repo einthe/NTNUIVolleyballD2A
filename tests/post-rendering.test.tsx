@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PostCard, PostForm } from "@/components/posts";
 import type { Post, Profile } from "@/lib/domain";
 
-vi.mock("@/server/queries", () => ({ getLineupById: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/server/actions", () => ({ mutate: vi.fn() }));
 vi.mock("@/server/auth-actions", () => ({ authAction: vi.fn() }));
 

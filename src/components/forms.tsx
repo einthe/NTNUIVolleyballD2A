@@ -1,10 +1,15 @@
 "use client";
-import { useActionState, useState, type ReactNode } from "react";
+import { useActionState, useState, useContext, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Check, LoaderCircle } from "lucide-react";
 import { mutate } from "@/server/actions";
 import { authAction, type ActionState } from "@/server/auth-actions";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { QueryClientContext } from "@tanstack/react-query";
+import { TeamContext } from "./team-provider";
+import { invalidateChange } from "@/lib/cache/queries";
+import { leaveAuthContext } from "@/lib/cache/auth-events";
 export function Submit({
   children = "Lagre endringer",
   secondary = false,
@@ -44,7 +49,25 @@ export function ActionForm({
   className?: string;
   auth?: boolean;
 }) {
-  const [state, action] = useActionState<ActionState, FormData>(auth ? authAction : mutate, {});
+  const router = useRouter();
+  const client = useContext(QueryClientContext);
+  const access = useContext(TeamContext);
+  const [state, action] = useActionState<ActionState, FormData>(async (previous, form) => {
+    const result = await (auth ? authAction : mutate)(previous, form);
+    if (auth && result.destination) {
+      leaveAuthContext(result.destination);
+      return result;
+    }
+    if (client && access && result.change) {
+      try {
+        await invalidateChange(client, access.scope, result.change);
+      } catch {
+        /* QueryState retains data and offers a retry. The write already succeeded. */
+      }
+    }
+    if (result.destination) router.push(result.destination);
+    return result;
+  }, {});
   return (
     <form action={action} className={className ?? "form-stack"}>
       {children}

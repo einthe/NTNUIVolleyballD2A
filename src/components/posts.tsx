@@ -1,3 +1,6 @@
+"use client";
+import { useState, useId, useContext } from "react";
+import { TeamContext } from "./team-provider";
 /* eslint-disable @next/next/no-img-element -- Private authenticated media must bypass shared optimizer caches. */
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, ImagePlus, Pencil, ShieldCheck } from "lucide-react";
@@ -10,21 +13,21 @@ import {
   type SecondaryRole,
 } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
-import { getLineupById } from "@/server/queries";
 import { Avatar, Badge } from "./ui";
 import { Court } from "./court";
 import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
-export async function PostCard({
+export function PostCard({
   post,
   profile,
   detail = false,
+  lineup = null,
 }: {
   post: Post;
   profile: Profile;
   detail?: boolean;
+  lineup?: import("@/lib/domain").Lineup | null;
 }) {
-  const lineup = post.lineup_id ? await getLineupById(post.lineup_id) : null;
   const revision = lineup?.lineup_revisions.find((r) => r.is_current_published);
   const editable =
     profile.base_role === "admin" ||
@@ -114,7 +117,11 @@ export async function PostCard({
     </article>
   );
 }
-export function PostForm({ post, roles }: { post?: Post; roles: SecondaryRole[] }) {
+export function PostForm({ post: initialPost, roles }: { post?: Post; roles: SecondaryRole[] }) {
+  // Keep the version paired with the editable fields even if a read refreshes.
+  const [post] = useState(initialPost);
+  const bodyLabel = useId();
+  const access = useContext(TeamContext);
   return (
     <ActionForm className="card editor form-stack">
       <input type="hidden" name="action" value="post" />
@@ -135,8 +142,9 @@ export function PostForm({ post, roles }: { post?: Post; roles: SecondaryRole[] 
         />
       </label>
       <label>
-        Innlegg
+        <span id={bodyLabel}>Innlegg</span>
         <textarea
+          aria-labelledby={bodyLabel}
           name="body"
           required
           maxLength={10000}
@@ -166,9 +174,7 @@ export function PostForm({ post, roles }: { post?: Post; roles: SecondaryRole[] 
           <legend>
             <ImagePlus size={18} /> Legg ved bilde <span className="muted">(valgfritt)</span>
           </legend>
-          <ImageUpload
-            maxMB={Math.min(10, Math.max(1, Number(process.env.MAX_IMAGE_SIZE_MB) || 3))}
-          />
+          <ImageUpload maxMB={access?.imageLimitMB ?? 3} />
           <label>
             Beskriv bildet
             <input

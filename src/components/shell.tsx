@@ -1,18 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  CalendarDays,
-  LayoutDashboard,
-  Users,
-  ShieldCheck,
-  Bell,
-  LogOut,
-  CheckCheck,
-} from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, ShieldCheck, Bell, CheckCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import { baseRoles, type Notification, type Profile } from "@/lib/domain";
-import { signOut } from "@/server/auth-actions";
+import { baseRoles } from "@/lib/domain";
+import { SignOutButton } from "./sign-out-button";
+import { useTeam } from "./team-provider";
+import { useQuery } from "@tanstack/react-query";
+import { queries } from "@/lib/cache/queries";
 import { ActionForm, Submit } from "./forms";
 import { Avatar, Brand } from "./ui";
 const links = [
@@ -20,15 +15,10 @@ const links = [
   { href: "/schedule", label: "Terminliste", icon: CalendarDays },
   { href: "/roster", label: "Lag", icon: Users },
 ];
-export function Shell({
-  profile,
-  notifications,
-  children,
-}: {
-  profile: Profile;
-  notifications: Notification[];
-  children: ReactNode;
-}) {
+export function Shell({ children }: { children: ReactNode }) {
+  const { profile, scope } = useTeam();
+  const notificationsQuery = useQuery(queries.notifications(scope));
+  const notifications = notificationsQuery.data ?? [];
   const pathname = usePathname();
   const unread = notifications.filter((n) => !n.read_at).length;
   return (
@@ -95,9 +85,22 @@ export function Shell({
                   <strong>Varsler</strong>
                   <span className="muted">{unread} uleste</span>
                 </div>
-                {!notifications.length && (
-                  <p className="muted notification-empty">Ingen varsler.</p>
+                {notificationsQuery.isError && (
+                  <p role="alert" className="message error">
+                    Varsler kunne ikke hentes.{" "}
+                    <button
+                      className="text-button"
+                      onClick={() => void notificationsQuery.refetch()}
+                    >
+                      Prøv igjen
+                    </button>
+                  </p>
                 )}
+                {!notifications.length &&
+                  !notificationsQuery.isPending &&
+                  !notificationsQuery.isError && (
+                    <p className="muted notification-empty">Ingen varsler.</p>
+                  )}
                 {notifications.map((n) => (
                   <article key={n.id} className={`notification-item ${n.read_at ? "" : "unread"}`}>
                     <Link
@@ -133,11 +136,7 @@ export function Shell({
               </summary>
               <div className="dropdown account-dropdown">
                 <Link href="/auth/update-password">Endre passord</Link>
-                <form action={signOut}>
-                  <button type="submit">
-                    <LogOut size={16} /> Logg ut
-                  </button>
-                </form>
+                <SignOutButton />
               </div>
             </details>
           </div>

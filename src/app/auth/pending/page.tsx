@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Hourglass } from "lucide-react";
 import { getAccount } from "@/server/queries";
-import { signOut } from "@/server/auth-actions";
+import { SignOutButton } from "@/components/sign-out-button";
 export default async function Pending() {
   const profile = await getAccount();
   if (profile?.account_status === "approved") redirect("/feed");
@@ -20,9 +20,7 @@ export default async function Pending() {
       <Link className="button" href="/feed">
         Sjekk tilgang
       </Link>
-      <form className="auth-switch" action={signOut}>
-        <button className="text-button">Tilbake til innlogging</button>
-      </form>
+      <SignOutButton />
     </>
   );
 }

@@ -5,7 +5,7 @@ import { eventTypes, type EventType, type Player, type TeamEvent } from "@/lib/d
 import { localInput } from "@/lib/dates";
 import { ActionForm, Submit } from "./forms";
 export function EventForm({
-  event,
+  event: initialEvent,
   allowed,
   players,
 }: {
@@ -13,6 +13,7 @@ export function EventForm({
   allowed: EventType[];
   players: Player[];
 }) {
+  const [event] = useState(initialEvent);
   const [kind, setKind] = useState<EventType>(event?.event_type ?? allowed[0]);
   return (
     <ActionForm className="card editor form-stack">

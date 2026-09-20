@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAccount } from "@/server/queries";
-import { signOut } from "@/server/auth-actions";
+import { SignOutButton } from "@/components/sign-out-button";
 export default async function Rejected() {
   const profile = await getAccount();
   if (!profile) redirect("/auth/sign-in");
@@ -14,9 +14,7 @@ export default async function Rejected() {
           : "Forespørselen er ikke godkjent."}
       </h2>
       <p className="auth-intro">Kontakt lagets administrator hvis du mener dette er feil.</p>
-      <form action={signOut}>
-        <button className="button">Logg ut</button>
-      </form>
+      <SignOutButton />
     </>
   );
 }

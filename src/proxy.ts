@@ -18,7 +18,9 @@ export async function proxy(request: NextRequest) {
       },
     },
   );
-  await supabase.auth.getUser();
+  // Verify/refresh the token with cached signing keys where supported. Private
+  // reads and writes still fetch the current user and account status themselves.
+  await supabase.auth.getClaims();
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
