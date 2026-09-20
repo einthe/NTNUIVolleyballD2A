@@ -110,7 +110,12 @@ function RosterView({
           <div className="roster-grid">
             {coaches.map((coach) => (
               <article className="card coach-card" key={coach.id}>
-                <Avatar name={coach.full_name} large />
+                <Avatar
+                  name={coach.full_name}
+                  userId={coach.id}
+                  path={coach.profile_photos?.storage_path}
+                  large
+                />
                 <div>
                   <h2>{coach.full_name}</h2>
                   <Badge tone="blue">Trener</Badge>

@@ -22,7 +22,9 @@ test("seeded coach sees private images, published lineups, draft matches and the
   await expect
     .poll(() => picture.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  await expect(page.locator(".court")).toBeVisible();
+  await expect(
+    page.locator(".post-card").filter({ hasText: "Klare for Fjordvik" }).locator(".court"),
+  ).toBeVisible();
   await page.goto("/roster");
   await expect.poll(() => page.locator(".player-card").count()).toBeGreaterThanOrEqual(12);
   await expect(page.getByRole("heading", { name: "Emil Solberg", exact: true })).toBeVisible();

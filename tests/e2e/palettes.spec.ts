@@ -1,3 +1,4 @@
+import { openNavigation } from "./support";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { palettes, paletteStorageKey } from "../../src/lib/palettes";
@@ -77,6 +78,7 @@ test("account palette changes preserve private navigation and synchronize betwee
     (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
   ).toEqual([]);
   await page.locator(".account-summary").click();
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Stall", exact: true })

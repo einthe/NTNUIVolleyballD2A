@@ -1,8 +1,20 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CalendarDays, LayoutDashboard, Users, ShieldCheck, Bell, CheckCheck } from "lucide-react";
-import type { ReactNode } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import {
+  CalendarDays,
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
+  Bell,
+  CheckCheck,
+  Volleyball,
+  HandHelping,
+  PartyPopper,
+  Menu,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { baseRoles } from "@/lib/domain";
 import { PaletteSelector } from "./palette-selector";
 import { SignOutButton } from "./sign-out-button";
@@ -16,52 +28,98 @@ const links = [
   { href: "/schedule", label: "Terminliste", icon: CalendarDays },
   { href: "/roster", label: "Stall", icon: Users },
 ];
+const shortcuts = [
+  { type: "match", label: "Kamper", icon: Volleyball },
+  { type: "volunteer_work", label: "Dugnader", icon: HandHelping },
+  { type: "social", label: "Sosialt", icon: PartyPopper },
+];
 export function Shell({ children }: { children: ReactNode }) {
   const { profile, scope } = useTeam();
   const notificationsQuery = useQuery(queries.notifications(scope));
   const notifications = notificationsQuery.data ?? [];
   const pathname = usePathname();
+  const params = useSearchParams();
   const unread = notifications.filter((n) => !n.read_at).length;
+  const drawer = useRef<HTMLDialogElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => drawer.current?.close();
+  const route = `${pathname}?${params.toString()}`;
+  useEffect(() => {
+    drawer.current?.close();
+  }, [route]);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 761px)");
+    const resized = () => {
+      if (desktop.matches) drawer.current?.close();
+    };
+    desktop.addEventListener("change", resized);
+    return () => desktop.removeEventListener("change", resized);
+  }, []);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [menuOpen]);
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main">
         Hopp til innhold
       </a>
-      <aside className="sidebar">
-        <Brand />
-        <div className="nav-label">LAGROMMET</div>
-        <nav aria-label="Hovedmeny">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`nav-link ${pathname.startsWith(href) || (href === "/feed" && pathname.startsWith("/posts")) ? "active" : ""}`}
-            >
-              <Icon size={20} />
-              {label}
-              {pathname === href && <span className="nav-dot" />}
-            </Link>
-          ))}
-        </nav>
-        {profile.base_role === "admin" && (
-          <>
-            <Link
-              className={`nav-link admin-label ${pathname.startsWith("/admin") ? "active" : ""}`}
-              href="/admin/users"
-              aria-label="Administrasjon"
-            >
-              <ShieldCheck size={20} /> Administrasjon
-            </Link>
-          </>
-        )}
-        <div className="sidebar-bottom">
-          <div className="team-note">
-            <VolleyballMark />
-          </div>
-        </div>
-      </aside>
+      <Sidebar />
+      <dialog
+        ref={drawer}
+        id="mobile-navigation"
+        className="mobile-drawer"
+        aria-label="Navigasjon"
+        onClose={() => setMenuOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key !== "Tab") return;
+          const controls = event.currentTarget.querySelectorAll<HTMLElement>(
+            "a[href], button:not([disabled])",
+          );
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+          )
+            closeMenu();
+        }}
+      >
+        <Sidebar onClose={closeMenu} />
+      </dialog>
       <div className="app-body">
         <header className="topbar">
+          <button
+            type="button"
+            className="icon-button mobile-menu-toggle"
+            aria-label="Åpne meny"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            aria-haspopup="dialog"
+            onClick={() => {
+              drawer.current?.showModal();
+              setMenuOpen(true);
+            }}
+          >
+            <Menu size={22} />
+          </button>
           <span className="topbar-breadcrumb">
             Lagrommet <span>/</span>{" "}
             {pathname.startsWith("/schedule")
@@ -70,12 +128,11 @@ export function Shell({ children }: { children: ReactNode }) {
                 ? "Stall"
                 : pathname.startsWith("/admin")
                   ? "Administrasjon"
-                  : "Innlegg"}
+                  : pathname === "/profile"
+                    ? "Min profil"
+                    : "Innlegg"}
           </span>
           <div className="topbar-controls">
-            <span className="private-label">
-              <span className="status-dot" /> Privat lagrom
-            </span>
             <details className="notification-menu">
               <summary className="icon-button" aria-label={`Varsler, ${unread} uleste`}>
                 <Bell size={20} />
@@ -129,7 +186,11 @@ export function Shell({ children }: { children: ReactNode }) {
             </details>
             <details className="account-menu">
               <summary className="account-summary" aria-label={`Konto: ${profile.full_name}`}>
-                <Avatar name={profile.full_name} />
+                <Avatar
+                  name={profile.full_name}
+                  userId={profile.id}
+                  path={profile.profile_photos?.storage_path}
+                />
                 <span>
                   <strong>{profile.full_name}</strong>
                   <small>{profile.base_role ? baseRoles[profile.base_role] : ""}</small>
@@ -137,6 +198,14 @@ export function Shell({ children }: { children: ReactNode }) {
               </summary>
               <div className="dropdown account-dropdown">
                 <PaletteSelector />
+                <Link
+                  href="/profile"
+                  onClick={(event) =>
+                    event.currentTarget.closest("details")?.removeAttribute("open")
+                  }
+                >
+                  Min profil
+                </Link>
                 <Link href="/auth/update-password">Endre passord</Link>
                 <SignOutButton />
               </div>
@@ -148,6 +217,90 @@ export function Shell({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+  );
+}
+function Sidebar({ onClose }: { onClose?: () => void }) {
+  const { profile } = useTeam();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  return (
+    <aside
+      className={`sidebar ${onClose ? "mobile-sidebar" : "desktop-sidebar"}`}
+      onClick={(event) => {
+        if (
+          !event.ctrlKey &&
+          !event.metaKey &&
+          !event.shiftKey &&
+          !event.altKey &&
+          event.button === 0 &&
+          (event.target as HTMLElement).closest("a")
+        )
+          onClose?.();
+      }}
+    >
+      <div className="sidebar-heading">
+        <Brand />
+        {onClose && (
+          <button
+            type="button"
+            className="icon-button drawer-close"
+            aria-label="Lukk meny"
+            onClick={onClose}
+            autoFocus
+          >
+            <X size={22} />
+          </button>
+        )}
+      </div>
+      <div className="nav-label">LAGROMMET</div>
+      <nav aria-label="Hovedmeny">
+        {links.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={`nav-link ${pathname.startsWith(href) || (href === "/feed" && pathname.startsWith("/posts")) ? "active" : ""}`}
+          >
+            <Icon size={20} />
+            {label}
+            {pathname === href && <span className="nav-dot" />}
+          </Link>
+        ))}
+      </nav>
+      <div className="nav-label shortcuts-label">SNARVEIER</div>
+      <nav aria-label="Snarveier" className="shortcut-nav">
+        {shortcuts.map(({ type, label, icon: Icon }) => {
+          const active = pathname === "/schedule" && params.get("type") === type;
+          return (
+            <Link
+              key={type}
+              href={`/schedule?type=${type}`}
+              className={`nav-link ${active ? "active" : ""}`}
+              aria-current={active ? "page" : undefined}
+            >
+              <Icon size={20} />
+              {label}
+              {active && <span className="nav-dot" />}
+            </Link>
+          );
+        })}
+      </nav>
+      {profile.base_role === "admin" && (
+        <>
+          <Link
+            className={`nav-link admin-label ${pathname.startsWith("/admin") ? "active" : ""}`}
+            href="/admin/users"
+            aria-label="Administrasjon"
+          >
+            <ShieldCheck size={20} /> Administrasjon
+          </Link>
+        </>
+      )}
+      <div className="sidebar-bottom">
+        <div className="team-note">
+          <VolleyballMark />
+        </div>
+      </div>
+    </aside>
   );
 }
 function VolleyballMark() {

@@ -1,11 +1,20 @@
 "use client";
-export function ImageUpload({ maxMB }: { maxMB: number }) {
+export function ImageUpload({
+  maxMB,
+  label = "Bilde",
+  required = false,
+}: {
+  maxMB: number;
+  label?: string;
+  required?: boolean;
+}) {
   return (
     <label>
-      Bilde
+      {label}
       <input
         type="file"
         name="image"
+        required={required}
         accept="image/jpeg,image/png,image/webp"
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];

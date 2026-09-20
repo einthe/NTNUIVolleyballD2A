@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Volleyball } from "lucide-react";
 import type { ReactNode } from "react";
+export { Avatar } from "./avatar";
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link className="brand" href="/feed" aria-label="NTNUI Volleyball – til innlegg">
@@ -57,18 +58,6 @@ export function EmptyState({
 }
 export function Badge({ children, tone = "green" }: { children: ReactNode; tone?: string }) {
   return <span className={`badge tone-${tone}`}>{children}</span>;
-}
-export function Avatar({ name, large = false }: { name: string; large?: boolean }) {
-  return (
-    <span className={`avatar ${large ? "avatar-large" : ""}`} aria-hidden="true">
-      {name
-        .split(" ")
-        .filter(Boolean)
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")}
-    </span>
-  );
 }
 export function Pagination({
   page,

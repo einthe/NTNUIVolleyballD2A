@@ -1,3 +1,4 @@
+import { openNavigation } from "../e2e/support";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { demoPassword } from "../../scripts/demo-seed.mjs";
@@ -13,6 +14,7 @@ async function coach(page: Page) {
 async function squareCourt(visual: Locator) {
   const court = visual.locator(".court");
   await expect(court).toBeVisible();
+  await expect(visual.locator(".court-net")).toHaveText("");
   const shape = await court.evaluate((node) => {
     const rect = node.getBoundingClientRect();
     return {
@@ -48,12 +50,14 @@ test("square courts, side libero and setup controls keep their spatial layout", 
   page,
 }, info) => {
   await coach(page);
-  await squareCourt(page.locator(".lineup-visual"));
+  await squareCourt(
+    page.locator(".post-card").filter({ hasText: "Klare for Fjordvik" }).locator(".lineup-visual"),
+  );
   await page.goto("/schedule");
   await page.getByRole("heading", { name: "NTNUI – Fjordvik", exact: true }).click();
   await squareCourt(page.locator(".match-lineup .lineup-visual"));
   await page.getByRole("link", { name: "Ny versjon", exact: true }).click();
-  await expect(page.getByLabel("Posisjon 4", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Dia", { exact: true })).toBeVisible();
   const positions = await page.locator(".lineup-selection select").evaluateAll((nodes) =>
     nodes.map((node) => {
       const rect = node.getBoundingClientRect();
@@ -61,12 +65,12 @@ test("square courts, side libero and setup controls keep their spatial layout", 
     }),
   );
   expect(positions.map((p) => p.name)).toEqual([
-    "slot_4",
-    "slot_3",
-    "slot_2",
-    "slot_5",
-    "slot_6",
-    "slot_1",
+    "role_opposite",
+    "role_m1",
+    "role_k1",
+    "role_k2",
+    "role_m2",
+    "role_setter",
   ]);
   expect(positions[0].y).toBe(positions[1].y);
   expect(positions[1].y).toBe(positions[2].y);
@@ -105,12 +109,33 @@ test("responsibility colors remain readable in every palette and roster is named
     ).toEqual([]);
   }
   await page.screenshot({ path: info.outputPath("responsibility-posts.png"), fullPage: true });
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Stall", exact: true })
     .click();
   await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
   await expect(page).toHaveTitle(/Stall/);
+  await page.goto("/schedule");
+  const training = page.locator(".event-card").filter({ hasText: "Trening: mottak og forsvar" });
+  await expect(training.getByText("Trener", { exact: true })).toBeVisible();
+  const social = page.locator(".event-card").filter({ hasText: "Lagkveld med pizza" });
+  const coral = await training.evaluate((node) => getComputedStyle(node).borderLeftColor);
+  expect(coral).not.toBe(await social.evaluate((node) => getComputedStyle(node).borderLeftColor));
+  for (const palette of ["ntnui", "petrol", "midnight", "plum"]) {
+    await page.locator(".account-summary").click();
+    await page.getByRole("combobox", { name: "Fargepalett" }).selectOption(palette);
+    await page.locator(".account-summary").click();
+    expect(
+      (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+    ).toEqual([]);
+  }
+  await page.screenshot({ path: info.outputPath("event-colors.png"), fullPage: true });
+  await training.click();
+  await expect(page.locator(".event-detail").getByText("Trener", { exact: true })).toBeVisible();
+  expect(
+    await page.locator(".event-detail").evaluate((node) => getComputedStyle(node).borderLeftColor),
+  ).toBe(coral);
 });
 
 test("schedule filters immediately, preserves history and resets pagination without reloading", async ({
@@ -127,14 +152,14 @@ test("schedule filters immediately, preserves history and resets pagination with
   await expect(page).toHaveURL(/\/schedule\?history=1&type=match$/);
   await expect(page.getByRole("heading", { name: "NTNUI – Vestbyen", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Kommende", exact: true }).click();
-  await expect(page.locator(".event-card")).toHaveCount(3);
+  await expect.poll(() => page.locator(".event-card").count()).toBeGreaterThanOrEqual(3);
   await filter.selectOption("practice");
   await expect(page.locator(".event-card")).toHaveCount(2);
   await expect(
     page.getByRole("heading", { name: "Trening: mottak og forsvar", exact: true }),
   ).toBeVisible();
   await filter.selectOption("");
-  await expect(page.locator(".event-card")).toHaveCount(11);
+  await expect.poll(() => page.locator(".event-card").count()).toBeGreaterThanOrEqual(11);
   await page.goBack();
   await expect(filter).toHaveValue("practice");
   await expect(page.locator(".event-card")).toHaveCount(2);

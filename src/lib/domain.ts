@@ -19,6 +19,19 @@ export const positions = {
   setter: "Legger",
   libero: "Libero",
 } as const;
+export const lineupRoles = {
+  setter: { label: "Legger", position: "setter", offset: 0 },
+  k1: { label: "K1", position: "outside_hitter", offset: 1 },
+  m1: { label: "M1", position: "middle_blocker", offset: 2 },
+  opposite: { label: "Dia", position: "opposite", offset: 3 },
+  k2: { label: "K2", position: "outside_hitter", offset: 4 },
+  m2: { label: "M2", position: "middle_blocker", offset: 5 },
+  libero: { label: "Libero", position: "libero", offset: 6 },
+} as const;
+export type LineupRole = keyof typeof lineupRoles;
+export function courtPosition(role: LineupRole, setterPosition: number) {
+  return role === "libero" ? null : ((setterPosition - 1 + lineupRoles[role].offset) % 6) + 1;
+}
 export const eventTypes = {
   match: "Kamp",
   practice: "Trening",
@@ -50,6 +63,7 @@ export type Position = keyof typeof positions;
 export type EventType = keyof typeof eventTypes;
 export type AccountStatus = "pending" | "approved" | "rejected" | "disabled";
 export type Profile = {
+  profile_photos?: { storage_path: string } | null;
   id: string;
   full_name: string;
   base_role: BaseRole | null;
@@ -76,11 +90,13 @@ export type TeamEvent = {
   ends_at: string | null;
   location: string | null;
   created_by_user_id: string;
+  creator_base_role_snapshot?: BaseRole | null;
   updated_at: string;
   match_details: Match | null;
   volunteer_assignments?: { player_user_id: string }[];
 };
 export type Slot = {
+  lineup_role?: LineupRole | null;
   player_user_id: string;
   court_position: number | null;
   is_libero: boolean;
@@ -89,6 +105,7 @@ export type Slot = {
   primary_position_snapshot: Position | null;
 };
 export type Revision = {
+  setter_position?: number | null;
   id: string;
   lineup_id: string;
   revision_number: number;
@@ -104,6 +121,7 @@ export type Lineup = {
   schedule_events: TeamEvent;
 };
 export type Post = {
+  author_photo_path?: string | null;
   id: string;
   author_user_id: string;
   author_name_snapshot: string;
@@ -205,12 +223,14 @@ export const eventSchema = z
 export const lineupSchema = z
   .object({
     match_id: uuid,
+    setter_position: z.number().int().min(1).max(6),
     expected_revision: z.number().int().min(0),
     publish: z.boolean(),
     slots: z
       .array(
         z.object({
           player_user_id: uuid,
+          lineup_role: z.enum(Object.keys(lineupRoles) as [LineupRole, ...LineupRole[]]),
           court_position: z.number().int().min(1).max(6).nullable(),
           is_libero: z.boolean(),
         }),
@@ -218,6 +238,18 @@ export const lineupSchema = z
       .max(7),
   })
   .superRefine((value, ctx) => {
+    if (
+      new Set(value.slots.map((s) => s.lineup_role)).size !== value.slots.length ||
+      value.slots.some(
+        (s) =>
+          s.court_position !== courtPosition(s.lineup_role, value.setter_position) ||
+          s.is_libero !== (s.lineup_role === "libero"),
+      )
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Oppstillingen har ugyldige roller eller rotasjon.",
+      });
     const starters = value.slots.filter((s) => !s.is_libero);
     const unique = new Set(value.slots.map((s) => s.player_user_id));
     if (unique.size !== value.slots.length)
@@ -279,10 +311,14 @@ export const roleTone: Record<SecondaryRole, string> = {
 export const eventTone: Record<EventType, string> = {
   match: "green",
   practice: "blue",
-  social: "purple",
-  volunteer_work: "gold",
-  travel: "blue",
-  team_logistics: "blue",
-  finance: "gold",
+  social: roleTone.social_coordinator,
+  volunteer_work: roleTone.volunteer_work_coordinator,
+  travel: roleTone.travel_coordinator,
+  team_logistics: roleTone.team_manager,
+  finance: roleTone.financial_manager,
   other: "muted",
 };
+
+export function eventHighlight(event: TeamEvent) {
+  return event.creator_base_role_snapshot === "coach" ? "coach" : eventTone[event.event_type];
+}

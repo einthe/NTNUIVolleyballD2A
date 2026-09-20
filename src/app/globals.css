@@ -1,4 +1,5 @@
 :root {
+  --coach: #f1a9a0;
   --pink: #e4acc9;
   --teal: #8dd8d0;
   --orange: #e5b184;
@@ -251,6 +252,17 @@ small {
   height: 53px;
   font-size: 17px;
 }
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.profile-photo-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 .badge {
   display: inline-flex;
   align-items: center;
@@ -277,6 +289,9 @@ small {
 .tone-gold {
   color: var(--gold);
 }
+.tone-coach {
+  color: var(--coach);
+}
 .tone-pink {
   color: var(--pink);
 }
@@ -286,7 +301,7 @@ small {
 .tone-orange {
   color: var(--orange);
 }
-.badge:is(.tone-pink, .tone-teal, .tone-orange) {
+.badge:is(.tone-pink, .tone-teal, .tone-orange, .tone-coach) {
   background: color-mix(in srgb, currentColor 6%, transparent);
   border-color: color-mix(in srgb, currentColor 18%, transparent);
 }
@@ -317,6 +332,7 @@ small {
   display: flex;
 }
 .sidebar {
+  overflow-y: auto;
   width: 224px;
   background: var(--sidebar);
   border-right: 1px solid var(--border);
@@ -326,6 +342,64 @@ small {
   flex-direction: column;
   padding: 33px 22px 0;
   z-index: 20;
+}
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.icon-button.mobile-menu-toggle {
+  display: none;
+}
+.mobile-drawer {
+  margin: 0;
+  padding: 0;
+  inset: 0 auto 0 0;
+  width: min(310px, calc(100vw - 48px));
+  max-width: none;
+  height: 100%;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  overscroll-behavior: contain;
+}
+.mobile-drawer::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+.drawer-close {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+}
+.mobile-sidebar .brand {
+  gap: 10px;
+}
+.mobile-sidebar .brand strong {
+  font-size: 24px;
+}
+.mobile-sidebar .brand small {
+  font-size: 7px;
+}
+.mobile-sidebar .brand-mark {
+  width: 36px;
+  height: 36px;
+}
+@keyframes drawer-enter {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer[open] {
+    animation: none;
+  }
 }
 .team-label {
   font-size: 8px;
@@ -351,6 +425,9 @@ small {
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+.shortcuts-label {
+  margin-top: 28px;
 }
 .nav-link {
   display: flex;
@@ -446,13 +523,6 @@ small {
   display: flex;
   gap: 25px;
   align-items: center;
-}
-.private-label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 10px;
-  color: var(--muted);
 }
 .account-summary {
   display: flex;
@@ -756,7 +826,9 @@ small {
 .post-delete {
   padding: 0 23px 18px;
 }
-.role-post {
+.role-post,
+.coach-post,
+.event-highlight {
   border-color: color-mix(in srgb, var(--role-color) 40%, var(--border));
   border-left: 4px solid var(--role-color);
   background:
@@ -1462,16 +1534,6 @@ legend {
   display: flex;
   justify-content: center;
   margin: 0 -3px 4px;
-}
-.court-net span {
-  font-size: 7px;
-  letter-spacing: 2px;
-  color: var(--theme-accent, #bccda8);
-  background: var(--theme-surface, #1a261a);
-  padding: 0 7px;
-  position: absolute;
-  top: -11px;
-  line-height: 16px;
 }
 .court {
   background: linear-gradient(var(--theme-court, #263c27), var(--theme-court-end, #203022));
@@ -2227,9 +2289,6 @@ legend {
   .aside-note {
     grid-column: 1/-1;
   }
-  .private-label {
-    display: none;
-  }
   .page-heading {
     align-items: flex-start;
   }
@@ -2269,85 +2328,59 @@ legend {
   }
 }
 @media (max-width: 760px) {
-  .sidebar {
-    position: relative;
-    width: auto;
-    inset: auto;
-    padding: 16px 20px 0;
+  .desktop-sidebar {
+    display: none;
+  }
+  .icon-button.mobile-menu-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .mobile-drawer[open] {
     display: block;
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
+    animation: drawer-enter 180ms ease-out;
   }
-  .sidebar > .brand {
-    margin-bottom: 17px;
+  .mobile-sidebar {
+    position: static;
+    width: 100%;
+    min-height: 100%;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(16px, env(safe-area-inset-bottom));
+    border: 0;
+    overflow: visible;
   }
-  .sidebar .brand-mark {
-    width: 33px;
-    height: 33px;
+  .mobile-sidebar .nav-label {
+    margin-top: 28px;
   }
-  .sidebar .brand-mark svg {
-    width: 22px;
+  .mobile-sidebar .sidebar-bottom {
+    padding-top: 28px;
   }
-  .sidebar .brand strong {
-    font-size: 22px;
-  }
-  .sidebar .brand small {
-    font-size: 7px;
-    margin-top: 3px;
-  }
-  .team-label,
-  .nav-label,
-  .sidebar-bottom {
-    display: none;
-  }
-  .sidebar nav {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    justify-content: space-between;
-  }
-  .nav-link {
-    padding: 12px 13px;
-    min-height: 46px;
-    font-size: 12px;
-    gap: 9px;
-    border-radius: 6px 6px 0 0;
-    flex: 1;
-    justify-content: center;
-  }
-  .nav-link svg {
-    width: 18px;
-  }
-  .nav-link.active {
-    border-bottom: 2px solid var(--accent);
-  }
-  .nav-dot {
-    display: none;
-  }
-  .sidebar > .nav-link {
-    margin-top: 0;
-    position: absolute;
-    right: 21px;
-    top: 19px;
-    font-size: 0;
-    min-height: 33px;
-    padding: 5px;
-    gap: 0;
-    border-radius: 5px;
-  }
-  .sidebar > .nav-link svg {
-    width: 21px;
+  .mobile-sidebar .admin-label {
+    margin-top: 24px;
   }
   .app-shell {
     display: block;
   }
   .app-body {
     margin: 0;
-    min-height: calc(100vh - 117px);
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   .topbar {
     height: 66px;
-    padding: 0 21px;
+    padding: 0 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg);
+  }
+  .topbar .topbar-breadcrumb {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .topbar-breadcrumb {
     font-size: 10px;
@@ -2921,4 +2954,16 @@ legend {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+.small-event.event-highlight {
+  padding-left: 10px;
+  border-radius: 5px;
+}
+.event-card.event-highlight:hover {
+  border-color: var(--role-color);
+}
+.coach-post.lineup-post {
+  border-color: color-mix(in srgb, var(--coach) 40%, var(--border));
+  border-left-color: var(--coach);
 }

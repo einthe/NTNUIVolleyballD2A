@@ -21,11 +21,11 @@ export const getAccount = cache(async () => {
   if (!user) return null;
   const { data, error } = await db
     .from("profiles")
-    .select("id,full_name,base_role,account_status,created_at")
+    .select("id,full_name,base_role,account_status,created_at,profile_photos(storage_path)")
     .eq("id", user.id)
     .single();
   if (error) throw new Error("Kunne ikke hente kontoen. Prøv igjen.");
-  return data as Profile;
+  return data as unknown as Profile;
 });
 export const requireAccount = cache(async () => {
   const profile = await getAccount();
@@ -56,7 +56,7 @@ export const getRoster = cache(async (account?: Profile): Promise<Player[]> => {
   const { data, error } = await db
     .from("profiles")
     .select(
-      "id,full_name,base_role,account_status,created_at,player_profiles(jersey_number),player_positions:player_positions!player_positions_player_user_id_fkey(position_key,is_primary),player_secondary_roles:player_secondary_roles!player_secondary_roles_player_user_id_fkey(role_key)",
+      "id,full_name,base_role,account_status,created_at,profile_photos(storage_path),player_profiles(jersey_number),player_positions:player_positions!player_positions_player_user_id_fkey(position_key,is_primary),player_secondary_roles:player_secondary_roles!player_secondary_roles_player_user_id_fkey(role_key)",
     )
     .eq("account_status", "approved")
     .in("base_role", ["player", "coach"])
@@ -64,6 +64,21 @@ export const getRoster = cache(async (account?: Profile): Promise<Player[]> => {
   if (error) throw new Error("Kunne ikke hente laget.");
   return data as unknown as Player[];
 });
+async function withAuthorPhotos(posts: Post[]): Promise<Post[]> {
+  if (!posts.length) return posts;
+  const db = await createClient();
+  const { data, error } = await db
+    .from("profile_photos")
+    .select("user_id,storage_path")
+    .in("user_id", [...new Set(posts.map((post) => post.author_user_id))]);
+  // Optional photos must never make the feed unavailable.
+  if (error) return posts;
+  const photos = new Map((data ?? []).map((photo) => [photo.user_id, photo.storage_path]));
+  return posts.map((post) => ({
+    ...post,
+    author_photo_path: photos.get(post.author_user_id) ?? null,
+  }));
+}
 export async function getPosts(page = 1, kind?: string, account?: Profile) {
   if (!account) await requireAccount();
   const db = await createClient();
@@ -76,7 +91,7 @@ export async function getPosts(page = 1, kind?: string, account?: Profile) {
   if (kind === "roles") query = query.not("secondary_role_context_key", "is", null);
   const { data, error, count } = await query.range((page - 1) * 12, page * 12 - 1);
   if (error) throw new Error("Kunne ikke hente innlegg.");
-  return { posts: data as Post[], count: count ?? 0 };
+  return { posts: await withAuthorPhotos(data as Post[]), count: count ?? 0 };
 }
 export async function getPost(id: string, account?: Profile) {
   if (!account) await requireAccount();
@@ -87,7 +102,7 @@ export async function getPost(id: string, account?: Profile) {
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("Kunne ikke hente innlegget.");
-  return data as Post | null;
+  return data ? (await withAuthorPhotos([data as Post]))[0] : null;
 }
 const eventSelect =
   "*,match_details(opponent,home_away,team_sets,opponent_sets),volunteer_assignments(player_user_id)";

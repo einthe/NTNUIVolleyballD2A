@@ -102,10 +102,17 @@ describe("runtime validation", () => {
   it("allows incomplete drafts but validates published slots and libero uniqueness", () => {
     const slots = Array.from({ length: 6 }, (_, i) => ({
       player_user_id: `00000000-0000-4000-a000-00000000000${i + 1}`,
+      lineup_role: ["setter", "k1", "m1", "opposite", "k2", "m2"][i],
       court_position: i + 1,
       is_libero: false,
     }));
-    const data = { match_id: profile.id, expected_revision: 0, publish: true, slots };
+    const data = {
+      match_id: profile.id,
+      setter_position: 1,
+      expected_revision: 0,
+      publish: true,
+      slots,
+    };
     expect(lineupSchema.safeParse(data).success).toBe(true);
     expect(lineupSchema.safeParse({ ...data, slots: slots.slice(0, 5) }).success).toBe(false);
     expect(lineupSchema.safeParse({ ...data, publish: false, slots: [] }).success).toBe(true);

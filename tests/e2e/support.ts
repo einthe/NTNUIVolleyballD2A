@@ -35,3 +35,11 @@ export async function postFields(page: Page, title: string) {
   await page.getByLabel("Tittel", { exact: true }).fill(title);
   await page.getByLabel("Innlegg", { exact: true }).fill("En beskjed til hele laget.");
 }
+
+export async function openNavigation(page: Page) {
+  const toggle = page.locator(".mobile-menu-toggle");
+  if ((await toggle.isVisible()) && (await toggle.getAttribute("aria-expanded")) === "false") {
+    await toggle.click();
+    await expect(page.getByRole("dialog", { name: "Navigasjon" })).toBeVisible();
+  }
+}

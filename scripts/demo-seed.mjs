@@ -57,7 +57,11 @@ export async function seedDemo({ db, addUser, files }) {
   const players = [];
   for (const [email, name, jersey_number, primary, roles] of roster) {
     const player = await member(email, name, "player", { jersey_number, roles });
-    await rpc(coach, "set_positions", { id: player.id, primary, secondary: [] });
+    await rpc(coach, "set_positions", {
+      id: player.id,
+      primary,
+      secondary: email === "jonas" ? ["opposite", "libero"] : [],
+    });
     players.push(player);
   }
   await user("pending", "Sander Nygaard");
@@ -78,7 +82,7 @@ export async function seedDemo({ db, addUser, files }) {
     return value.toISOString();
   };
   async function event(event_type, title, days, extra = {}) {
-    return rpc(admin, "save_event", {
+    return rpc(["match", "practice"].includes(event_type) ? coach : admin, "save_event", {
       event_type,
       title,
       description: "Fiktiv hendelse til lokal utprøving.",
@@ -117,13 +121,27 @@ export async function seedDemo({ db, addUser, files }) {
 
   const slots = players.slice(0, 7).map((p, i) => ({
     player_user_id: p.id,
+    lineup_role: ["setter", "k1", "m1", "opposite", "k2", "m2", "libero"][i],
     court_position: i < 6 ? i + 1 : null,
     is_libero: i === 6,
   }));
-  await rpc(coach, "save_lineup", { match_id: match, expected_revision: 0, publish: false, slots });
-  await rpc(coach, "save_lineup", { match_id: match, expected_revision: 1, publish: true, slots });
+  await rpc(coach, "save_lineup", {
+    match_id: match,
+    setter_position: 1,
+    expected_revision: 0,
+    publish: false,
+    slots,
+  });
+  await rpc(coach, "save_lineup", {
+    match_id: match,
+    setter_position: 1,
+    expected_revision: 1,
+    publish: true,
+    slots,
+  });
   await rpc(coach, "save_lineup", {
     match_id: nextMatch,
+    setter_position: 1,
     expected_revision: 0,
     publish: false,
     slots: slots.slice(0, 4),

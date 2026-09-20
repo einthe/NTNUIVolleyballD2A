@@ -7,6 +7,9 @@ import {
   eventSchema,
   imageSchema,
   lineupSchema,
+  lineupRoles,
+  courtPosition,
+  type LineupRole,
   notificationSchema,
   positionSchema,
   postSchema,
@@ -24,6 +27,8 @@ function friendlyError(message: string) {
     return "Draktnummeret er allerede i bruk. Velg et annet nummer.";
   if (message.includes("lineup_history_exists"))
     return "Kampen har en lagret oppstilling og må bevares. Oppdater kampbeskrivelsen ved avlysning.";
+  if (message.includes("invalid_player_position"))
+    return "En valgt spiller har ikke lenger riktig spillerposisjon. Oppdater oppstillingen før du lagrer.";
   if (message.includes("not_authorized") || message.includes("invalid_role"))
     return "Du har ikke tilgang til denne handlingen. Last siden på nytt for å oppdatere tilgangene dine.";
   if (message.includes("six_starters")) return "Velg seks forskjellige spillere før publisering.";
@@ -53,7 +58,44 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       if (result.error) throw new Error(result.error.message);
       return result.data as string;
     };
-    if (kind === "post") {
+    if (kind === "profile-photo" || kind === "remove-profile-photo") {
+      let path: string | null = null;
+      if (kind === "profile-photo") {
+        const file = form.get("image");
+        if (!(file instanceof File) || !file.size) return { error: "Velg et profilbilde." };
+        if (file.size > 3 * 1024 * 1024) return { error: "Bildet kan være høyst 3 MB." };
+        imageSchema.parse({ type: file.type, size: file.size });
+        let buffer: Buffer;
+        try {
+          const source = Buffer.from(await file.arrayBuffer());
+          const metadata = await sharp(source, { limitInputPixels: 40_000_000 }).metadata();
+          if (!["jpeg", "png", "webp"].includes(metadata.format ?? ""))
+            throw new Error("invalid_image");
+          buffer = await sharp(source, { limitInputPixels: 40_000_000 })
+            .rotate()
+            .resize(512, 512, { fit: "cover" })
+            .webp({ quality: 85 })
+            .toBuffer();
+        } catch {
+          return { error: "Velg et gyldig JPEG-, PNG- eller WebP-bilde." };
+        }
+        path = `${profile.id}/${crypto.randomUUID()}.webp`;
+        const upload = await db.storage
+          .from("profile-photos")
+          .upload(path, buffer, { contentType: "image/webp", upsert: false });
+        if (upload.error) return { error: "Bildet kunne ikke lastes opp. Prøv igjen." };
+      }
+      let previous: string | null;
+      try {
+        previous = await rpc("set_profile_photo", {
+          data: { storage_path: path, expected_path: nullable("expected_path") },
+        });
+      } catch (error) {
+        if (path) await db.storage.from("profile-photos").remove([path]);
+        throw error;
+      }
+      if (previous) await db.storage.from("profile-photos").remove([previous]);
+    } else if (kind === "post") {
       const input = postSchema.parse({
         id: savedPost.savedPostId || text("id") || undefined,
         title: text("title"),
@@ -145,21 +187,20 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       change.id = await rpc("save_event", { data: input });
       destination = `/schedule/${change.id}`;
     } else if (kind === "lineup") {
-      const slots = Array.from({ length: 6 }, (_, i) => ({
-        player_user_id: text(`slot_${i + 1}`),
-        court_position: i + 1,
-        is_libero: false,
-      })).filter((s) => s.player_user_id);
+      const setterPosition = Number(text("setter_position"));
       const input = lineupSchema.parse({
         match_id: text("match_id"),
+        setter_position: setterPosition,
         expected_revision: Number(text("expected_revision")),
         publish: text("intent") === "publish",
-        slots: [
-          ...slots,
-          ...(text("libero")
-            ? [{ player_user_id: text("libero"), court_position: null, is_libero: true }]
-            : []),
-        ],
+        slots: (Object.keys(lineupRoles) as LineupRole[])
+          .map((role) => ({
+            player_user_id: text(`role_${role}`),
+            lineup_role: role,
+            court_position: courtPosition(role, setterPosition),
+            is_libero: role === "libero",
+          }))
+          .filter((slot) => slot.player_user_id),
       });
       await rpc("save_lineup", { data: input });
       change.matchId = input.match_id;

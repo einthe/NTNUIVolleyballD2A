@@ -2,12 +2,18 @@ import { positions, secondaryRoles, roleTone, type Player } from "@/lib/domain";
 import { ActionForm, Submit } from "./forms";
 import { Avatar, Badge } from "./ui";
 export function PlayerCard({ player, editable }: { player: Player; editable: boolean }) {
-  const primary = player.player_positions.find((p) => p.is_primary);
-  const secondary = player.player_positions.filter((p) => !p.is_primary);
+  const assignedPositions = [...player.player_positions].sort(
+    (a, b) => Number(b.is_primary) - Number(a.is_primary),
+  );
   return (
     <article className="card player-card">
       <div className="player-card-top">
-        <Avatar name={player.full_name} large />
+        <Avatar
+          name={player.full_name}
+          userId={player.id}
+          path={player.profile_photos?.storage_path}
+          large
+        />
         <span className="jersey-number">
           {player.player_profiles?.jersey_number !== null &&
           player.player_profiles?.jersey_number !== undefined ? (
@@ -22,14 +28,11 @@ export function PlayerCard({ player, editable }: { player: Player; editable: boo
       </div>
       <h2>{player.full_name}</h2>
       <p className="player-position">
-        {primary ? positions[primary.position_key] : "Posisjon ikke satt"}
+        {assignedPositions.length
+          ? assignedPositions.map((p) => positions[p.position_key]).join(" / ")
+          : "Posisjon ikke satt"}
         <span>Spiller</span>
       </p>
-      {secondary.length > 0 && (
-        <p className="secondary-positions">
-          Også {secondary.map((p) => positions[p.position_key]).join(" · ")}
-        </p>
-      )}
       <div className="player-roles">
         {player.player_secondary_roles.map(({ role_key }) => (
           <Badge key={role_key} tone={roleTone[role_key]}>

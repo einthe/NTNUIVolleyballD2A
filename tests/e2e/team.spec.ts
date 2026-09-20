@@ -41,8 +41,32 @@ test.describe("full authenticated workflow against Supabase", () => {
     };
     await makeUser(adminEmail, `Admin ${run}`, "admin");
     await makeUser(coachEmail, `Coach ${run}`, "coach");
-    for (let i = 0; i < 6; i++)
-      await makeUser(`starter-${i}-${run}@example.test`, `Starter ${run} ${i + 1}`, "player");
+    const positionCoach = createClient(
+      process.env.E2E_SUPABASE_URL!,
+      process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const login = await positionCoach.auth.signInWithPassword({ email: coachEmail, password });
+    if (login.error) throw login.error;
+    const starterPositions = [
+      "setter",
+      "outside_hitter",
+      "middle_blocker",
+      "opposite",
+      "outside_hitter",
+      "middle_blocker",
+    ];
+    for (let i = 0; i < 6; i++) {
+      const starter = await makeUser(
+        `starter-${i}-${run}@example.test`,
+        `Starter ${run} ${i + 1}`,
+        "player",
+      );
+      const assigned = await positionCoach.rpc("set_positions", {
+        data: { id: starter, primary: starterPositions[i], secondary: [] },
+      });
+      if (assigned.error) throw assigned.error;
+    }
     await page.goto("/auth/sign-up");
     await page.getByLabel("Fullt navn").fill(`Player ${run}`);
     await page.getByLabel("E-postadresse").fill(email);
@@ -98,9 +122,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await expect(
       coach.getByRole("heading", { name: "Kampoppstilling.", exact: true }),
     ).toBeVisible();
-    await coach
-      .getByLabel("Posisjon 1", { exact: true })
-      .selectOption({ label: `Starter ${run} 1` });
+    await coach.getByLabel("Legger", { exact: true }).selectOption({ label: `Starter ${run} 1` });
     await coach.getByRole("button", { name: "Lagre utkast" }).click();
     await expect(coach.getByRole("link", { name: "Fortsett utkast" })).toBeVisible();
     await page.goto(matchUrl);
@@ -109,7 +131,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await coach.getByRole("link", { name: "Fortsett utkast" }).click();
     for (let i = 1; i <= 6; i++)
       await coach
-        .getByLabel(`Posisjon ${i}`, { exact: true })
+        .getByLabel(["Legger", "K1", "M1", "Dia", "K2", "M2"][i - 1], { exact: true })
         .selectOption({ label: `Starter ${run} ${i}` });
     await coach.getByRole("button", { name: "Publiser oppstilling" }).click();
     await expect(coach.getByText("Versjon 2 · Publisert", { exact: false })).toBeVisible();

@@ -1,3 +1,4 @@
+import { openNavigation } from "./support";
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { provision, login, postFields } from "./support";
@@ -88,6 +89,7 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
   await page.getByRole("link", { name: "Tilbake til terminlisten" }).click();
   await expect(page.getByRole("heading", { name: eventTitle, exact: true })).toBeVisible();
   expect(reads["/api/team/events"] ?? 0).toBe(0);
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Stall", exact: true })
@@ -97,6 +99,7 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
   await page.getByLabel("Søk etter spiller").fill("Starter");
   await page.getByRole("button", { name: "Søk", exact: true }).click();
   await expect(page).toHaveURL(/\/roster\?q=Starter/);
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Terminliste", exact: true })
@@ -120,6 +123,7 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
     await heldRefresh;
     await route.continue();
   });
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Innlegg", exact: true })
@@ -187,6 +191,7 @@ test("private reads enforce scope, permissions, sign-out and account changes", a
   if (disabled.error) throw disabled.error;
   await page.clock.install();
   await page.clock.fastForward(16_000);
+  await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Stall", exact: true })

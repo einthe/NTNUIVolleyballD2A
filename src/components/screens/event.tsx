@@ -5,9 +5,10 @@ import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
 import { QueryState, MissingRecord } from "@/components/query-state";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { CalendarDays, MapPin, Pencil, Volleyball } from "lucide-react";
-import { canCoach, canManageEvent, eventTypes, eventTone } from "@/lib/domain";
+import { canCoach, canManageEvent, eventTypes, eventTone, eventHighlight } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
 import { BackLink, Badge } from "@/components/ui";
 import { homeAway } from "@/components/events";
@@ -45,9 +46,13 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
   return (
     <div className="narrow-page">
       <BackLink href="/schedule">Tilbake til terminlisten</BackLink>
-      <article className="card event-detail">
+      <article
+        className="card event-detail event-highlight"
+        style={{ "--role-color": `var(--${eventHighlight(event)})` } as CSSProperties}
+      >
         <div className="event-labels">
           <Badge tone={eventTone[event.event_type]}>{eventTypes[event.event_type]}</Badge>
+          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
           {event.match_details && (
             <span className="muted">{homeAway[event.match_details.home_away]}</span>
           )}

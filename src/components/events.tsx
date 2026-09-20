@@ -1,12 +1,17 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
-import { eventTone, eventTypes, type TeamEvent } from "@/lib/domain";
+import { eventTone, eventHighlight, eventTypes, type TeamEvent } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
 import { Badge } from "./ui";
 export const homeAway = { home: "Hjemmekamp", away: "Bortekamp", neutral: "Nøytral bane" };
 export function EventCard({ event, href }: { event: TeamEvent; href?: string }) {
   return (
-    <Link className="event-card card" href={href ?? `/schedule/${event.id}`}>
+    <Link
+      className="event-card card event-highlight"
+      style={{ "--role-color": `var(--${eventHighlight(event)})` } as CSSProperties}
+      href={href ?? `/schedule/${event.id}`}
+    >
       <div className="event-date">
         <span>{dateLabel(event.starts_at, "MMM")}</span>
         <strong>{dateLabel(event.starts_at, "dd")}</strong>
@@ -15,6 +20,7 @@ export function EventCard({ event, href }: { event: TeamEvent; href?: string }) 
       <div className="event-card-content">
         <div className="event-labels">
           <Badge tone={eventTone[event.event_type]}>{eventTypes[event.event_type]}</Badge>
+          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
           {event.match_details && (
             <span className="muted">{homeAway[event.match_details.home_away]}</span>
           )}
@@ -46,7 +52,11 @@ export function EventCard({ event, href }: { event: TeamEvent; href?: string }) 
 }
 export function SmallEvent({ event }: { event: TeamEvent }) {
   return (
-    <Link href={`/schedule/${event.id}`} className="small-event">
+    <Link
+      href={`/schedule/${event.id}`}
+      className="small-event event-highlight"
+      style={{ "--role-color": `var(--${eventHighlight(event)})` } as CSSProperties}
+    >
       <div className="small-event-date">
         <strong>{dateLabel(event.starts_at, "dd")}</strong>
         <span>{dateLabel(event.starts_at, "MMM")}</span>
@@ -54,6 +64,7 @@ export function SmallEvent({ event }: { event: TeamEvent }) {
       <div>
         <span className={`event-type-text tone-${eventTone[event.event_type]}`}>
           {eventTypes[event.event_type]}
+          {event.creator_base_role_snapshot === "coach" && " · Trener"}
         </span>
         <strong>{event.title}</strong>
         <small>

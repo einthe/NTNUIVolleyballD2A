@@ -1,12 +1,10 @@
-import { positions, type Slot } from "@/lib/domain";
+import { positions, lineupRoles, type Slot } from "@/lib/domain";
 export function Court({ slots, compact = false }: { slots: Slot[]; compact?: boolean }) {
   const libero = slots.find((s) => s.is_libero);
   return (
     <div className={`lineup-visual ${compact ? "compact" : ""} ${libero ? "with-libero" : ""}`}>
       <div className="court-wrap">
-        <div className="court-net">
-          <span>NETT</span>
-        </div>
+        <div className="court-net" aria-hidden="true" />
         <div className="court" aria-hidden="true">
           {[4, 3, 2, 5, 6, 1].map((position) => {
             const slot = slots.find((s) => s.court_position === position && !s.is_libero);
@@ -17,8 +15,12 @@ export function Court({ slots, compact = false }: { slots: Slot[]; compact?: boo
                 <strong title={slot?.full_name_snapshot ?? undefined}>
                   {slot?.full_name_snapshot ?? "Ledig posisjon"}
                 </strong>
-                {slot?.primary_position_snapshot && (
-                  <small>{positions[slot.primary_position_snapshot]}</small>
+                {(slot?.lineup_role || slot?.primary_position_snapshot) && (
+                  <small>
+                    {slot.lineup_role
+                      ? lineupRoles[slot.lineup_role].label
+                      : positions[slot.primary_position_snapshot!]}
+                  </small>
                 )}
               </div>
             );

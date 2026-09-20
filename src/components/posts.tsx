@@ -41,12 +41,18 @@ export function PostCard({
           ? ({
               "--role-color": `var(--${roleTone[post.secondary_role_context_key]})`,
             } as CSSProperties)
-          : undefined
+          : post.base_role_snapshot === "coach"
+            ? ({ "--role-color": "var(--coach)" } as CSSProperties)
+            : undefined
       }
-      className={`post-card card ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : ""}`}
+      className={`post-card card ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : post.base_role_snapshot === "coach" ? "coach-post" : ""}`}
     >
       <header className="post-header">
-        <Avatar name={post.author_name_snapshot} />
+        <Avatar
+          name={post.author_name_snapshot}
+          userId={post.author_user_id}
+          path={post.author_photo_path}
+        />
         <div className="post-author">
           <strong>{post.author_name_snapshot}</strong>
           <span>

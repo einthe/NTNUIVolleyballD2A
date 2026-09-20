@@ -25,6 +25,20 @@ Coaches and administrators can start from **Kampoppstilling** on the feed or sch
 
 Decorative slogans, redundant captions, and repeated footer text have been removed. Form guidance, permissions explanations, and error messages remain.
 
+## Role-based lineups and content colors
+
+Apply `supabase/migrations/202609200001_lineup_roles_and_event_authors.sql` before deploying this update (`supabase db push` for a linked project). Do not reset the database. For the local demo, stop and restart `npm run dev` to apply it automatically with fresh fictional data.
+
+Lineups now store Legger, K1, M1, Dia, K2, M2 and optional Libero, plus the setter's starting position. Both primary and secondary player positions qualify for selection; SQL also checks eligibility, duplicate players/roles and rotation. Empty/incomplete drafts retain their setter position. Historical revisions stay unchanged. The editor infers compatible selections from older lineups and asks for review when an old selection no longer fits.
+
+Events use the same responsibility colors as posts; coach-authored content has a coral highlight. New events preserve the creator's role when edited. Existing events are backfilled using their creator's current role because no earlier author-role snapshot exists. Stall displays all positions with the primary first, e.g. `Kant / Dia`.
+
+## Profile pictures and shortcuts
+
+Users can upload, replace or remove their own profile picture from **Min profil** in the account menu. Pictures are private to approved members, cropped to a square, and shown in the account menu, Stall and post headers. JPEG, PNG and WebP uploads are limited to 3 MB. Apply `supabase/migrations/202609200002_profile_photos.sql` before deploying this feature (`supabase db push`); restarting the local demo applies it automatically with fresh fictional data.
+
+The **Snarveier** navigation links open upcoming matches, volunteer events and social events in Terminliste. On mobile, the top-left menu button opens the sidebar over a dimmed backdrop. It closes when selecting a link, tapping the backdrop or close button, or pressing Escape; keyboard focus stays within the open menu.
+
 ## Prerequisites
 
 - Node.js **24 LTS** and npm (`.nvmrc` is included).
@@ -88,7 +102,7 @@ The application **does not need a service-role key**. Never put one in `NEXT_PUB
    supabase db push
    ```
 
-   Alternatively, execute `supabase/migrations/202609190001_initial.sql` once in the project's SQL Editor on an empty application schema. Do not re-run it on an already migrated database.
+   Alternatively, execute the files in `supabase/migrations/` in filename order in the project's SQL Editor on an empty application schema. On existing databases, apply only migrations that have not already been applied.
 
 4. The migration creates tables, constraints, indexes, Auth signup trigger, RLS policies, RPCs, disabled notification rules, and the **private** `post-images` bucket. Do not make the bucket public.
 5. Enable email/password sign-in. Set the minimum password length to 12 and enable email confirmation for production. Configure production SMTP in Supabase before inviting users.

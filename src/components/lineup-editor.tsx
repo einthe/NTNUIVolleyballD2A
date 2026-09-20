@@ -1,6 +1,14 @@
 "use client";
 import { useState } from "react";
-import type { Player, Revision, Slot } from "@/lib/domain";
+import {
+  courtPosition,
+  lineupRoles,
+  type LineupRole,
+  type Player,
+  type Revision,
+  type Slot,
+} from "@/lib/domain";
+import { eligibleFor, initialLineup } from "@/lib/lineup";
 import { ActionForm, Submit } from "./forms";
 import { Court } from "./court";
 export function LineupEditor({
@@ -15,31 +23,57 @@ export function LineupEditor({
   version: number;
 }) {
   const [{ revision, version }] = useState({ revision: initialRevision, version: initialVersion });
-  const [selection, setSelection] = useState<Record<string, string>>(() =>
-    Object.fromEntries(
-      (revision?.lineup_revision_slots ?? []).map((s) => [
-        s.is_libero ? "libero" : `slot_${s.court_position}`,
-        s.player_user_id,
-      ]),
-    ),
+  const [initial] = useState(() => initialLineup(revision, players));
+  const [selection, setSelection] = useState(initial.selection);
+  const [setterPosition, setSetterPosition] = useState(initial.setterPosition);
+  const slots: Slot[] = (Object.keys(selection) as LineupRole[]).flatMap((role) => {
+    const player = players.find((p) => p.id === selection[role]);
+    if (!player) return [];
+    return [
+      {
+        player_user_id: player.id,
+        lineup_role: role,
+        court_position: courtPosition(role, setterPosition),
+        is_libero: role === "libero",
+        full_name_snapshot: player.full_name,
+        jersey_number_snapshot: player.player_profiles?.jersey_number ?? null,
+        primary_position_snapshot:
+          player.player_positions.find((p) => p.is_primary)?.position_key ?? null,
+      },
+    ];
+  });
+  const roleField = (role: LineupRole) => (
+    <label key={role}>
+      <span>
+        {lineupRoles[role].label}
+        {role === "libero" ? " (valgfritt)" : ""}
+      </span>
+      <select
+        aria-label={lineupRoles[role].label}
+        name={`role_${role}`}
+        value={selection[role] ?? ""}
+        onChange={(event) => setSelection({ ...selection, [role]: event.target.value })}
+      >
+        <option value="">{role === "libero" ? "Ingen libero" : "Velg spiller"}</option>
+        {players
+          .filter((player) => eligibleFor(player, role))
+          .map((player) => (
+            <option
+              key={player.id}
+              value={player.id}
+              disabled={Object.entries(selection).some(
+                ([key, id]) => key !== role && id === player.id,
+              )}
+            >
+              {player.player_profiles?.jersey_number != null
+                ? `#${player.player_profiles.jersey_number} `
+                : ""}
+              {player.full_name}
+            </option>
+          ))}
+      </select>
+    </label>
   );
-  const slots: Slot[] = Object.entries(selection)
-    .filter(([, id]) => id)
-    .flatMap(([key, id]) => {
-      const player = players.find((p) => p.id === id);
-      if (!player) return [];
-      return [
-        {
-          player_user_id: id,
-          court_position: key === "libero" ? null : Number(key.split("_")[1]),
-          is_libero: key === "libero",
-          full_name_snapshot: player.full_name,
-          jersey_number_snapshot: player.player_profiles?.jersey_number ?? null,
-          primary_position_snapshot:
-            player.player_positions.find((p) => p.is_primary)?.position_key ?? null,
-        },
-      ];
-    });
   return (
     <div className="lineup-editor-grid">
       <ActionForm className="card editor form-stack">
@@ -49,62 +83,39 @@ export function LineupEditor({
         <div>
           <h2>Sett startsekseren</h2>
           <p className="muted">
-            Velg en spiller i hver rotasjonsposisjon. Lagre et utkast, eller publiser til laget.
+            Velg spillere etter rolle. Leggerens startposisjon bestemmer rotasjonen. Valgene følger
+            primær- og sekundærposisjonene i Stall.
           </p>
         </div>
-        <div className="lineup-selection">
-          {[4, 3, 2, 5, 6, 1].map((position) => (
-            <label key={position}>
-              <span id={`slot-label-${position}`}>Posisjon {position}</span>
-              <select
-                aria-labelledby={`slot-label-${position}`}
-                name={`slot_${position}`}
-                value={selection[`slot_${position}`] ?? ""}
-                onChange={(e) =>
-                  setSelection({ ...selection, [`slot_${position}`]: e.target.value })
-                }
-              >
-                <option value="">Velg spiller</option>
-                {players.map((p) => (
-                  <option
-                    key={p.id}
-                    value={p.id}
-                    disabled={Object.entries(selection).some(
-                      ([key, id]) => key !== `slot_${position}` && id === p.id,
-                    )}
-                  >
-                    {p.player_profiles?.jersey_number !== null &&
-                    p.player_profiles?.jersey_number !== undefined
-                      ? `#${p.player_profiles.jersey_number} `
-                      : ""}
-                    {p.full_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-        </div>
+        {initial.needsReview && (
+          <p className="message" role="status">
+            Noen tidligere valg passer ikke med spillerposisjonene. Velg disse spillerne på nytt.
+          </p>
+        )}
         <label>
-          Libero <span className="muted">(valgfritt)</span>
+          Leggerens startposisjon
           <select
-            name="libero"
-            value={selection.libero ?? ""}
-            onChange={(e) => setSelection({ ...selection, libero: e.target.value })}
+            name="setter_position"
+            value={setterPosition}
+            onChange={(event) => setSetterPosition(Number(event.target.value))}
           >
-            <option value="">Ingen libero</option>
-            {players.map((p) => (
-              <option
-                key={p.id}
-                value={p.id}
-                disabled={Object.entries(selection).some(
-                  ([key, id]) => key !== "libero" && id === p.id,
-                )}
-              >
-                {p.full_name}
+            {[1, 2, 3, 4, 5, 6].map((position) => (
+              <option key={position} value={position}>
+                P{position}
               </option>
             ))}
           </select>
         </label>
+        <div className="lineup-selection">
+          {[4, 3, 2, 5, 6, 1].map((position) =>
+            roleField(
+              (Object.keys(lineupRoles) as LineupRole[]).find(
+                (role) => courtPosition(role, setterPosition) === position,
+              )!,
+            ),
+          )}
+        </div>
+        {roleField("libero")}
         <p className="field-hint">
           Publisering lagrer navn, draktnummer og spillerposisjon slik de er nå. Tidligere
           publiserte versjoner bevares.

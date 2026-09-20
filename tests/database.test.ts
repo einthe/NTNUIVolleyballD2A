@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // PostgreSQL runs the actual production migration. These shims represent the
@@ -53,7 +53,10 @@ const userInput = (target: string, extra = {}) => ({
 let postId: string, matchId: string;
 beforeAll(async () => {
   await db.exec(readFileSync("tests/fixtures/supabase-schema.sql", "utf8"));
-  await db.exec(readFileSync("supabase/migrations/202609190001_initial.sql", "utf8"));
+  for (const file of readdirSync("supabase/migrations")
+    .filter((f) => f.endsWith(".sql"))
+    .sort())
+    await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   for (let i = 1; i <= 16; i++)
     await sql("insert into auth.users values($1,$2,$3)", [
       id(i),
@@ -74,11 +77,165 @@ beforeAll(async () => {
   await sql("update public.profiles set account_status='disabled',base_role='player' where id=$1", [
     disabled,
   ]);
+  for (let i = 0; i < 6; i++)
+    await asUser(coach, () =>
+      rpc("set_positions", {
+        id: id(i + 8),
+        primary: [
+          "setter",
+          "outside_hitter",
+          "middle_blocker",
+          "opposite",
+          "outside_hitter",
+          "middle_blocker",
+        ][i],
+        secondary: [],
+      }),
+    );
   postId = await asUser(player, () => rpc("save_post", postInput));
   matchId = await asUser(coach, () => rpc("save_event", eventInput()));
 });
 afterAll(async () => {
   await db.close();
+});
+
+describe("private profile pictures", () => {
+  it("limits writes to the current user, preserves the current file, and rejects stale changes", async () => {
+    const author = id(30),
+      viewer = id(31);
+    for (const user of [author, viewer]) {
+      await sql("insert into auth.users values($1,$2,$3)", [
+        user,
+        `${user}@example.test`,
+        JSON.stringify({ full_name: "Photo User" }),
+      ]);
+      await sql("update profiles set account_status='approved',base_role='player' where id=$1", [
+        user,
+      ]);
+    }
+    const first = `${author}/${id(50)}.webp`,
+      next = `${author}/${id(51)}.webp`;
+    await asUser(author, async () => {
+      for (const path of [first, next])
+        await sql(
+          "insert into storage.objects(bucket_id,name,owner_id) values('profile-photos',$1,$2)",
+          [path, author],
+        );
+      await rpc("set_profile_photo", { storage_path: first, expected_path: null, user_id: viewer });
+      expect((await sql("select user_id from profile_photos")).rows).toEqual([{ user_id: author }]);
+      expect(
+        (
+          await sql(
+            "delete from storage.objects where bucket_id='profile-photos' and name=$1 returning id",
+            [first],
+          )
+        ).rows,
+      ).toHaveLength(0);
+      await expect(
+        sql("update profile_photos set storage_path=$1 where user_id=$2", [next, author]),
+      ).rejects.toThrow();
+      await expect(
+        rpc("set_profile_photo", { storage_path: next, expected_path: null }),
+      ).rejects.toThrow("stale_profile_photo");
+    });
+    await asUser(viewer, async () => {
+      expect(
+        (await sql("select storage_path from profile_photos where user_id=$1", [author])).rows,
+      ).toEqual([{ storage_path: first }]);
+      expect(
+        (
+          await sql("select id from storage.objects where bucket_id='profile-photos' and name=$1", [
+            first,
+          ])
+        ).rows,
+      ).toHaveLength(1);
+      await expect(
+        rpc("set_profile_photo", { storage_path: first, expected_path: null }),
+      ).rejects.toThrow("invalid_media");
+      await expect(
+        sql("insert into storage.objects(bucket_id,name,owner_id) values('profile-photos',$1,$2)", [
+          `${author}/${id(52)}.webp`,
+          viewer,
+        ]),
+      ).rejects.toThrow();
+      expect(
+        (
+          await sql(
+            "delete from storage.objects where bucket_id='profile-photos' and name=$1 returning id",
+            [next],
+          )
+        ).rows,
+      ).toHaveLength(0);
+    });
+    await asUser(author, async () => {
+      expect(await rpc("set_profile_photo", { storage_path: next, expected_path: first })).toBe(
+        first,
+      );
+      expect(
+        (
+          await sql(
+            "delete from storage.objects where bucket_id='profile-photos' and name=$1 returning id",
+            [first],
+          )
+        ).rows,
+      ).toHaveLength(1);
+      expect(await rpc("set_profile_photo", { storage_path: null, expected_path: next })).toBe(
+        next,
+      );
+      expect(
+        (
+          await sql(
+            "delete from storage.objects where bucket_id='profile-photos' and name=$1 returning id",
+            [next],
+          )
+        ).rows,
+      ).toHaveLength(1);
+    });
+  });
+  it("denies anonymous and unapproved accounts, but permits coach and administrator pictures", async () => {
+    await asUser(null, () => expect(rpc("set_profile_photo", {})).rejects.toThrow());
+    for (const [index, role, status] of [
+      [60, "coach", "approved"],
+      [61, "admin", "approved"],
+      [62, "player", "pending"],
+      [63, "player", "disabled"],
+    ] as const) {
+      const user = id(index),
+        path = `${user}/${id(index + 10)}.webp`;
+      await sql("insert into auth.users values($1,$2,$3)", [
+        user,
+        `${user}@example.test`,
+        JSON.stringify({ full_name: "Photo Access" }),
+      ]);
+      await sql("update profiles set base_role=$2,account_status=$3 where id=$1", [
+        user,
+        role,
+        status,
+      ]);
+      await asUser(user, async () => {
+        if (status !== "approved") {
+          await expect(rpc("set_profile_photo", {})).rejects.toThrow("not_authorized");
+          expect((await sql("select * from profile_photos")).rows).toHaveLength(0);
+          await expect(
+            sql(
+              "insert into storage.objects(bucket_id,name,owner_id) values('profile-photos',$1,$2)",
+              [path, user],
+            ),
+          ).rejects.toThrow();
+        } else {
+          await sql(
+            "insert into storage.objects(bucket_id,name,owner_id) values('profile-photos',$1,$2)",
+            [path, user],
+          );
+          await rpc("set_profile_photo", { storage_path: path });
+          await rpc("set_profile_photo", { storage_path: null, expected_path: path });
+          await sql("delete from storage.objects where bucket_id='profile-photos' and name=$1", [
+            path,
+          ]);
+        }
+      });
+    }
+  });
 });
 describe.sequential("real PostgreSQL privileges and RLS", () => {
   it("ignores forged registration role metadata and creates a pending profile", async () => {
@@ -383,9 +540,12 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
     await asUser(coach, () =>
       rpc("save_lineup", {
         match_id: matchId,
+        setter_position: 1,
         expected_revision: 0,
         publish: false,
-        slots: [{ player_user_id: player, court_position: 1, is_libero: false }],
+        slots: [
+          { player_user_id: id(8), lineup_role: "setter", court_position: 1, is_libero: false },
+        ],
       }),
     );
     await asUser(player, async () => {
@@ -394,13 +554,20 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
     });
   });
   it("rejects player publication, incomplete starters and duplicate libero", async () => {
-    const data = { match_id: matchId, expected_revision: 1, publish: true, slots: [] };
+    const data = {
+      match_id: matchId,
+      setter_position: 1,
+      expected_revision: 1,
+      publish: true,
+      slots: [],
+    };
     await asUser(player, () => expect(rpc("save_lineup", data)).rejects.toThrow("not_authorized"));
     await asUser(coach, () =>
       expect(rpc("save_lineup", data)).rejects.toThrow("six_starters_required"),
     );
     const slots = Array.from({ length: 6 }, (_, i) => ({
       player_user_id: id(i + 8),
+      lineup_role: ["setter", "k1", "m1", "opposite", "k2", "m2"][i],
       court_position: i + 1,
       is_libero: false,
     }));
@@ -416,11 +583,18 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
   it("publishes structured snapshots and preserves old versions after profile changes", async () => {
     const slots = Array.from({ length: 6 }, (_, i) => ({
       player_user_id: id(i + 8),
+      lineup_role: ["setter", "k1", "m1", "opposite", "k2", "m2"][i],
       court_position: i + 1,
       is_libero: false,
     }));
     const revision = await asUser(coach, () =>
-      rpc("save_lineup", { match_id: matchId, expected_revision: 1, publish: true, slots }),
+      rpc("save_lineup", {
+        match_id: matchId,
+        setter_position: 1,
+        expected_revision: 1,
+        publish: true,
+        slots,
+      }),
     );
     const original = (
       await sql(
@@ -440,7 +614,13 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
       ).rows[0],
     ).toEqual(original);
     await asUser(coach, () =>
-      rpc("save_lineup", { match_id: matchId, expected_revision: 2, publish: true, slots }),
+      rpc("save_lineup", {
+        match_id: matchId,
+        setter_position: 1,
+        expected_revision: 2,
+        publish: true,
+        slots,
+      }),
     );
     expect(
       (await sql("select * from lineup_revisions where status='published'")).rows,
@@ -455,7 +635,13 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
   it("rejects stale lineup updates and preserves matches with history", async () => {
     await asUser(coach, () =>
       expect(
-        rpc("save_lineup", { match_id: matchId, expected_revision: 1, publish: false, slots: [] }),
+        rpc("save_lineup", {
+          match_id: matchId,
+          setter_position: 1,
+          expected_revision: 1,
+          publish: false,
+          slots: [],
+        }),
       ).rejects.toThrow("stale_revision"),
     );
     await asUser(coach, () =>
@@ -505,5 +691,85 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
         sql("select emit_notification('normal_post_created','forged','','post',$1,null)", [postId]),
       ).rejects.toThrow(),
     );
+  });
+  it("validates roles, rotation and primary/secondary eligibility in SQL", async () => {
+    const match = await asUser(coach, () => rpc("save_event", eventInput()));
+    const input = { match_id: match, setter_position: 6, expected_revision: 0, publish: false };
+    const slot = { player_user_id: id(9), lineup_role: "k1", court_position: 1, is_libero: false };
+    await asUser(coach, () =>
+      expect(
+        rpc("save_lineup", { ...input, slots: [{ ...slot, player_user_id: id(8) }] }),
+      ).rejects.toThrow("invalid_player_position"),
+    );
+    await asUser(coach, () =>
+      expect(
+        rpc("save_lineup", { ...input, slots: [{ ...slot, court_position: 2 }] }),
+      ).rejects.toThrow("invalid_lineup_rotation"),
+    );
+    await asUser(coach, () =>
+      expect(rpc("save_lineup", { ...input, setter_position: 0, slots: [] })).rejects.toThrow(
+        "invalid_setter_position",
+      ),
+    );
+    await asUser(coach, () =>
+      rpc("set_positions", { id: id(9), primary: "outside_hitter", secondary: ["libero"] }),
+    );
+    await asUser(coach, () =>
+      expect(
+        rpc("save_lineup", {
+          ...input,
+          slots: [slot, { ...slot, lineup_role: "libero", court_position: null, is_libero: true }],
+        }),
+      ).rejects.toThrow(),
+    );
+    const revision = await asUser(coach, () =>
+      rpc("save_lineup", {
+        ...input,
+        slots: [{ ...slot, lineup_role: "libero", court_position: null, is_libero: true }],
+      }),
+    );
+    expect(
+      (await sql("select setter_position from lineup_revisions where id=$1", [revision])).rows[0],
+    ).toEqual({ setter_position: 6 });
+    expect(
+      (
+        await sql(
+          "select lineup_role,primary_position_snapshot from lineup_revision_slots where lineup_revision_id=$1",
+          [revision],
+        )
+      ).rows[0],
+    ).toEqual({ lineup_role: "libero", primary_position_snapshot: "outside_hitter" });
+    await asUser(coach, () =>
+      rpc("set_positions", { id: id(9), primary: "outside_hitter", secondary: [] }),
+    );
+    await asUser(coach, () =>
+      expect(
+        rpc("save_lineup", {
+          ...input,
+          expected_revision: 1,
+          slots: [{ ...slot, lineup_role: "libero", court_position: null, is_libero: true }],
+        }),
+      ).rejects.toThrow("invalid_player_position"),
+    );
+  });
+  it("captures event author role and preserves it when another coach/admin edits", async () => {
+    const match = await asUser(coach, () => rpc("save_event", eventInput()));
+    const event = (await sql("select * from schedule_events where id=$1", [match])).rows[0] as {
+      updated_at: string;
+    };
+    await asUser(admin, () =>
+      rpc("save_event", {
+        ...eventInput(),
+        id: match,
+        title: "Admin edit",
+        expected_updated_at: event.updated_at,
+        creator_base_role_snapshot: "admin",
+      }),
+    );
+    expect(
+      (await sql("select creator_base_role_snapshot from schedule_events where id=$1", [match]))
+        .rows[0],
+    ).toEqual({ creator_base_role_snapshot: "coach" });
+    await asUser(player, () => expect(sql("select snapshot_event_author()")).rejects.toThrow());
   });
 });

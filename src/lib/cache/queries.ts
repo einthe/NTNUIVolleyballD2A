@@ -136,6 +136,10 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
   const targets: (readonly unknown[])[] = [];
   const add = (...values: (readonly unknown[])[]) => targets.push(...values);
   switch (change.kind) {
+    case "profile-photo":
+    case "remove-profile-photo":
+      add(keys.session(scope), keys.roster(scope), keys.posts(scope), ["team", scope, "post"]);
+      break;
     case "post":
     case "delete-post":
     case "remove-media":
