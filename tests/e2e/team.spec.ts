@@ -92,20 +92,45 @@ test.describe("full authenticated workflow against Supabase", () => {
     await coach.getByLabel("Starter", { exact: true }).fill("2027-01-15T18:00");
     await coach.getByLabel("Motstander", { exact: true }).fill("Testmotstander");
     await coach.getByRole("button", { name: "Opprett hendelse" }).click();
+    await expect(coach.getByRole("heading", { name: `E2E match ${run}` })).toBeVisible();
+    const matchUrl = coach.url();
     await coach.getByRole("link", { name: "Lag kampoppstilling" }).click();
     await expect(
       coach.getByRole("heading", { name: "Kampoppstilling.", exact: true }),
     ).toBeVisible();
+    await coach
+      .getByLabel("Posisjon 1", { exact: true })
+      .selectOption({ label: `Starter ${run} 1` });
+    await coach.getByRole("button", { name: "Lagre utkast" }).click();
+    await expect(coach.getByRole("link", { name: "Fortsett utkast" })).toBeVisible();
+    await page.goto(matchUrl);
+    await expect(page.getByText("Oppstillingen er ikke publisert ennå.")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Fortsett utkast" })).toHaveCount(0);
+    await coach.getByRole("link", { name: "Fortsett utkast" }).click();
     for (let i = 1; i <= 6; i++)
       await coach
         .getByLabel(`Posisjon ${i}`, { exact: true })
         .selectOption({ label: `Starter ${run} ${i}` });
     await coach.getByRole("button", { name: "Publiser oppstilling" }).click();
-    await expect(coach.getByText("Versjon 1 · Publisert", { exact: false })).toBeVisible();
+    await expect(coach.getByText("Versjon 2 · Publisert", { exact: false })).toBeVisible();
+    await coach.getByRole("link", { name: "Ny versjon" }).click();
+    await coach.getByRole("button", { name: "Publiser oppstilling" }).click();
+    await expect(coach.getByText("Versjon 3 · Publisert", { exact: false })).toBeVisible();
+    await coach.getByText("Tidligere publiserte versjoner", { exact: true }).click();
+    await expect(coach.getByRole("heading", { name: "Versjon 2", exact: true })).toBeVisible();
+    await coach.getByRole("link", { name: "Rediger hendelse" }).click();
+    await coach.getByLabel("Sett vunnet · NTNUI").fill("3");
+    await coach.getByLabel("Sett vunnet · motstander").fill("1");
+    await coach.getByRole("button", { name: "Lagre endringer" }).click();
+    await expect(coach.locator(".score")).toHaveText("3 – 1");
     await page.goto("/feed?filter=lineup");
     await expect(
       page.getByRole("heading", { name: "Klare for Testmotstander" }).first(),
     ).toBeVisible();
+    await page.screenshot({
+      path: `test-results/lineup-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
     await coachContext.close();
     // Test records intentionally remain for inspection. Reset the disposable DB afterward.
   });

@@ -16,11 +16,7 @@ export default async function EditLineup({ params }: { params: Promise<{ id: str
   return (
     <>
       <BackLink href={`/schedule/${id}`}>Tilbake til kampen</BackLink>
-      <PageHeading
-        eyebrow="SEKS PÅ BANEN. HELE LAGET I RYGGEN."
-        title="Kampoppstilling"
-        description={event.title}
-      />
+      <PageHeading title="Kampoppstilling" description={event.title} />
       <LineupEditor
         matchId={id}
         players={roster.filter((p) => p.base_role === "player")}

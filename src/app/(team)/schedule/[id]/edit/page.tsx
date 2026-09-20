@@ -18,7 +18,7 @@ export default async function EditEvent({ params }: { params: Promise<{ id: stri
   return (
     <div className="narrow-page">
       <BackLink href={`/schedule/${id}`}>Tilbake til hendelsen</BackLink>
-      <PageHeading eyebrow="HOLD LAGET OPPDATERT" title="Rediger hendelse" />
+      <PageHeading title="Rediger hendelse" />
       <EventForm
         event={event}
         allowed={[event.event_type]}

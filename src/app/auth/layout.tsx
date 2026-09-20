@@ -1,24 +1,14 @@
 import { Brand } from "@/components/ui";
-import { ArrowUpRight, LockKeyhole } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className="auth-layout">
       <section className="auth-story">
         <Brand />
         <div className="auth-story-content">
-          <p className="eyebrow">
-            <span className="status-dot" /> NTNUI VOLLEYBALL · D2A
-          </p>
           <h1>
-            Ett lag.
-            <br />
-            Alle med<span className="brand-dot">.</span>
+            Lagrommet<span className="brand-dot">.</span>
           </h1>
-          <p>
-            Fra første serve til siste poeng.
-            <br />
-            Dette er vårt lagrom.
-          </p>
           <div className="auth-court" aria-hidden="true">
             <svg viewBox="0 0 600 300" fill="none">
               <path d="M80 260 210 30h280l60 230H80Z" stroke="currentColor" strokeWidth="2" />
@@ -32,15 +22,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               />
             </svg>
           </div>
-          <div className="auth-values">
-            <span>FELLESSKAP</span>
-            <span>AMBISJONER</span>
-            <span>SPILLEGLEDE</span>
-          </div>
-        </div>
-        <div className="auth-story-footer">
-          <span>TRONDHEIM, NORGE</span>
-          <ArrowUpRight size={20} />
         </div>
       </section>
       <section className="auth-panel">
@@ -48,9 +29,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <LockKeyhole size={14} /> KUN FOR LAGET
         </div>
         <div className="auth-form-wrap">{children}</div>
-        <footer>
-          NTNUI Volleyball D2A <span>·</span> Sammen på banen.
-        </footer>
       </section>
     </main>
   );

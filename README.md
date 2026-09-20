@@ -15,6 +15,14 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 
 Without Supabase configuration the application displays the sign-in/setup state. It does not expose a demo session or bypass private routes.
 
+### Post and lineup fixes
+
+The feed crash was caused by treating `post_media` as an array. Its unique `post_id` relationship makes Supabase return one object or `null`. Feed cards, post details, and editing now handle that shape. Existing posts and images are preserved; these fixes require an app deployment, **not a database reset or a new migration**.
+
+Coaches and administrators can start from **Kampoppstilling** on the feed or schedule, select a match, then save a draft or publish. Publishing adds the lineup to the feed. Players cannot access the editor. Failed uploads retain the saved post ID so retrying does not create duplicates. Feed sections have independent error boundaries, and retry refetches their content.
+
+Decorative slogans, redundant captions, and repeated footer text have been removed. Form guidance, permissions explanations, and error messages remain.
+
 ## Prerequisites
 
 - Node.js **24 LTS** and npm (`.nvmrc` is included).
@@ -118,16 +126,21 @@ npm run build
 npm run start
 ```
 
-`npm test` applies the production SQL migration to PGlite, an embedded PostgreSQL engine, with minimal Supabase auth/storage schema shims. It tests real SQL permissions and RLS using separate `anon`/`authenticated` roles, not mocked authorization functions. It also tests validation and Oslo time conversion. This does not test the hosted Supabase Auth or Storage HTTP services.
+`npm test` applies the production SQL migration to PGlite, an embedded PostgreSQL engine, with minimal Supabase auth/storage schema shims. It tests real SQL permissions and RLS using separate `anon`/`authenticated` roles, not mocked authorization functions. It also tests validation, Oslo time conversion, and rendering posts with the actual object/null media shape. This does not test the hosted Supabase Auth or Storage HTTP services.
 
 Browser and accessibility tests:
 
 ```sh
 npx playwright install chromium
+npm run test:e2e:local
 npm run test:e2e
 ```
 
 Public tests run at desktop and mobile widths and verify route protection, private image denial, registration/recovery forms, keyboard use, WCAG checks, and horizontal overflow. Screenshots are written to `test-results/`.
+
+`test:e2e:local` runs both public and authenticated workflows without Docker or project credentials. It starts the real Next app on port 3100 and a loopback-only test adapter on port 54329. The adapter executes the production migration and RLS in PGlite and derives relationship cardinality from database constraints. Auth and Storage HTTP services are simulated; this catches application/rendering bugs but does not replace testing hosted Supabase. No application authentication bypass is added. The in-memory test database is discarded when the server stops.
+
+Authenticated coverage includes post/image creation, private image access, editing, image removal, deletion, failed-upload retry, isolated feed errors, registration/approval, roster administration, event permissions, volunteer assignments, notifications, account disabling, and lineup drafts/publication/history/results. Failure-injection tests run only with the isolated adapter.
 
 The full browser test (`tests/e2e/team.spec.ts`) registers a user, approves them from a separate admin session, writes a post, verifies role restrictions, and publishes a coach's lineup. It requires a **disposable** Supabase instance with the migration applied and email confirmation disabled. Configure the application's normal Supabase variables for that same instance and set these test-only environment variables in the test process:
 
@@ -137,9 +150,9 @@ E2E_SUPABASE_SERVICE_ROLE_KEY=<test-only privileged key>
 E2E_BASE_URL=<optional already-running app origin>
 ```
 
-Without the first two variables, that authenticated integration test is explicitly skipped. It generates unique synthetic accounts and leaves test data for inspection. Reset only the disposable test database afterward. **Never point this test at the production project.** The privileged key is used exclusively by the Node test process to arrange fixtures and is never imported by app code.
+Without the first two variables, `test:e2e` skips authenticated integration tests. Set `E2E_REQUIRE_BACKEND=1` to fail instead of skipping; CI and `test:e2e:local` enforce this. Hosted tests generate unique synthetic accounts and leave test data for inspection. Reset only the disposable test database afterward. **Never point these tests at the production project.** The privileged key is used exclusively by the Node test process to arrange fixtures and is never imported by app code.
 
-The GitHub Actions workflow runs code checks, builds, and a separate full Supabase integration job with local Docker services.
+The GitHub Actions workflow runs code checks, builds, the isolated browser suite, and a separate full Supabase integration job with local Docker services.
 
 ## Architecture and security
 

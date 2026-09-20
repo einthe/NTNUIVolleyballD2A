@@ -7,7 +7,6 @@ import {
   Users,
   ShieldCheck,
   Bell,
-  ArrowUpRight,
   LogOut,
   CheckCheck,
 } from "lucide-react";
@@ -39,9 +38,6 @@ export function Shell({
       </a>
       <aside className="sidebar">
         <Brand />
-        <div className="team-label">
-          <span className="status-dot" /> ET LAG. ÉN RETNING.
-        </div>
         <div className="nav-label">LAGROMMET</div>
         <nav aria-label="Hovedmeny">
           {links.map(({ href, label, icon: Icon }) => (
@@ -58,10 +54,10 @@ export function Shell({
         </nav>
         {profile.base_role === "admin" && (
           <>
-            <div className="nav-label admin-label">ADMINISTRASJON</div>
             <Link
-              className={`nav-link ${pathname.startsWith("/admin") ? "active" : ""}`}
+              className={`nav-link admin-label ${pathname.startsWith("/admin") ? "active" : ""}`}
               href="/admin/users"
+              aria-label="Administrasjon"
             >
               <ShieldCheck size={20} /> Administrasjon
             </Link>
@@ -70,12 +66,6 @@ export function Shell({
         <div className="sidebar-bottom">
           <div className="team-note">
             <VolleyballMark />
-            <strong>Sammen på banen.</strong>
-            <p>Og alt som skjer imellom.</p>
-          </div>
-          <div className="sidebar-footer">
-            <span>NTNUI VOLLEYBALL</span>
-            <ArrowUpRight size={14} />
           </div>
         </div>
       </aside>
@@ -106,9 +96,7 @@ export function Shell({
                   <span className="muted">{unread} uleste</span>
                 </div>
                 {!notifications.length && (
-                  <p className="muted notification-empty">
-                    Du er oppdatert. Nye varsler dukker opp her.
-                  </p>
+                  <p className="muted notification-empty">Ingen varsler.</p>
                 )}
                 {notifications.map((n) => (
                   <article key={n.id} className={`notification-item ${n.read_at ? "" : "unread"}`}>
@@ -136,7 +124,7 @@ export function Shell({
               </div>
             </details>
             <details className="account-menu">
-              <summary className="account-summary">
+              <summary className="account-summary" aria-label={`Konto: ${profile.full_name}`}>
                 <Avatar name={profile.full_name} />
                 <span>
                   <strong>{profile.full_name}</strong>
@@ -157,12 +145,6 @@ export function Shell({
         <main id="main" className="main-content">
           {children}
         </main>
-        <footer className="page-footer">
-          <span>NTNUI Volleyball · D2A</span>
-          <span>
-            Bygget for laget <span className="brand-dot">↗</span>
-          </span>
-        </footer>
       </div>
     </div>
   );

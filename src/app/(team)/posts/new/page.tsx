@@ -9,7 +9,7 @@ export default async function NewPost() {
   return (
     <div className="narrow-page">
       <BackLink href="/feed">Tilbake til innlegg</BackLink>
-      <PageHeading eyebrow="DEL MED LAGET" title="Nytt innlegg" />
+      <PageHeading title="Nytt innlegg" />
       {canCoach(profile) && (
         <p className="message info">
           Vil du publisere en startoppstilling?{" "}

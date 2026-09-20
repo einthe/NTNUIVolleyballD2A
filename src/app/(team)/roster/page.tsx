@@ -25,11 +25,7 @@ export default async function Roster({
   );
   return (
     <>
-      <PageHeading
-        eyebrow="FOLKENE SOM GJØR FORSKJELLEN"
-        title="Laget vårt"
-        description="Ulike roller. Samme drakt. Samme ambisjoner."
-      >
+      <PageHeading title="Laget vårt">
         <span className="member-count">
           <Users size={17} /> {allPlayers.length} spillere · {coaches.length} trenere
         </span>
@@ -79,7 +75,9 @@ export default async function Roster({
           <div className="card">
             <EmptyState
               icon={<Users size={28} />}
-              title={params.q || params.position ? "Ingen spillere passer søket" : "Laget tar form"}
+              title={
+                params.q || params.position ? "Ingen spillere passer søket" : "Ingen spillere ennå"
+              }
             >
               <p>
                 {params.q || params.position

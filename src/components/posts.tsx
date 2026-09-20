@@ -96,9 +96,6 @@ export async function PostCard({
         )}
       </div>
       <footer className="post-footer">
-        <span>
-          {post.post_type === "lineup" ? "Laget er satt. Vi ses på banen." : "Delt med laget"}
-        </span>
         {editable && post.post_type === "normal" ? (
           <Link href={`/posts/${post.id}/edit`}>
             <Pencil size={14} /> Rediger

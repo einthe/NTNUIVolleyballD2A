@@ -15,7 +15,6 @@ export default async function NotificationSettings() {
   return (
     <>
       <PageHeading
-        eyebrow="BARE DET LAGET TRENGER"
         title="Varselinnstillinger"
         description="Bestem hvilke hendelser som skal gi varsler i lagrommet."
       />

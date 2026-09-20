@@ -118,8 +118,7 @@ export function LineupEditor({
         </div>
       </ActionForm>
       <section className="card lineup-preview">
-        <p className="eyebrow">FORHÅNDSVISNING</p>
-        <h2>Klar for kamp.</h2>
+        <h2>Forhåndsvisning</h2>
         <Court slots={slots} />
       </section>
     </div>

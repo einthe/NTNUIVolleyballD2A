@@ -26,11 +26,7 @@ export default async function Schedule({
   const groups = Object.groupBy(events, (event) => dateLabel(event.starts_at, "MMMM yyyy"));
   return (
     <>
-      <PageHeading
-        eyebrow="VI SES PÅ BANEN"
-        title="Terminliste"
-        description="Treninger, kamper og alt det andre vi gjør sammen."
-      >
+      <PageHeading title="Terminliste">
         <div className="button-row">
           {canCoach(profile) && (
             <Link href="/lineups/new" className="button secondary">
@@ -91,7 +87,7 @@ export default async function Schedule({
         <div className="card">
           <EmptyState
             icon={<CalendarDays size={28} />}
-            title={past ? "Ingen tidligere hendelser" : "Plass til nye opplevelser"}
+            title={past ? "Ingen tidligere hendelser" : "Ingen kommende hendelser"}
           >
             <p>
               {past

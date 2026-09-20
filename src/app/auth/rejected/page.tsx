@@ -8,7 +8,6 @@ export default async function Rejected() {
   if (profile.account_status === "pending") redirect("/auth/pending");
   return (
     <>
-      <p className="eyebrow">KONTOSTATUS</p>
       <h2>
         {profile.account_status === "disabled"
           ? "Kontoen er deaktivert."

@@ -25,11 +25,7 @@ export default async function Feed({
   const profile = await requireAccount();
   return (
     <>
-      <PageHeading
-        eyebrow="SAMMEN PÅ OG UTENFOR BANEN"
-        title="Innlegg"
-        description="Små oppdateringer. Store øyeblikk. Alt som samler laget."
-      >
+      <PageHeading title="Innlegg">
         <div className="button-row">
           {canCoach(profile) && (
             <Link className="button secondary" href="/lineups/new">
@@ -43,20 +39,6 @@ export default async function Feed({
       </PageHeading>
       <div className="feed-layout">
         <div>
-          <section className="welcome-card">
-            <div>
-              <p className="eyebrow">LAGROMMET DITT</p>
-              <h2>
-                Hei, {profile.full_name.split(" ")[0]} <span className="wave">↗</span>
-              </h2>
-              <p>Her holder vi kontakten mellom treningene.</p>
-            </div>
-            <div className="welcome-decoration" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-          </section>
           <nav className="filter-tabs" aria-label="Filtrer innlegg">
             {[
               ["", "Alle innlegg"],
@@ -83,14 +65,6 @@ export default async function Feed({
           <ContentBoundary title="Lagoversikten kunne ikke hentes" href="/roster">
             <TeamSummary />
           </ContentBoundary>
-          <div className="aside-note">
-            <span className="status-dot" />
-            <p>
-              Dette er vårt private lagrom.
-              <br />
-              Det vi deler her, blir i laget.
-            </p>
-          </div>
         </aside>
       </div>
     </>
@@ -122,12 +96,10 @@ async function FeedPosts({
           ))
         ) : (
           <div className="card">
-            <EmptyState icon={<MessageSquare size={28} />} title="Gjør lagrommet til vårt">
-              <p>
-                {filter
-                  ? "Ingen innlegg i denne kategorien ennå."
-                  : "Del en beskjed, en påminnelse eller noe hyggelig med laget."}
-              </p>
+            <EmptyState
+              icon={<MessageSquare size={28} />}
+              title={filter ? "Ingen innlegg i denne kategorien" : "Ingen innlegg ennå"}
+            >
               <Link className="button secondary" href="/posts/new">
                 Skriv et innlegg <ArrowRight size={16} />
               </Link>
@@ -151,7 +123,7 @@ async function UpcomingEvents() {
     <section className="card upcoming-card">
       <header className="section-title">
         <h2>
-          <CalendarDays size={17} /> Det neste som skjer
+          <CalendarDays size={17} /> Kommende hendelser
         </h2>
         <Link href="/schedule" aria-label="Se terminlisten">
           <ArrowUpRight size={17} />
@@ -160,9 +132,7 @@ async function UpcomingEvents() {
       {events.length ? (
         events.slice(0, 4).map((event) => <SmallEvent key={event.id} event={event} />)
       ) : (
-        <p className="aside-empty">
-          Ingen kommende hendelser ennå. Nye treninger og kamper vises her.
-        </p>
+        <p className="aside-empty">Ingen kommende hendelser.</p>
       )}
       <Link className="aside-link" href="/schedule">
         Hele terminlisten <ArrowRight size={15} />
@@ -175,22 +145,12 @@ async function TeamSummary() {
   const roster = await getRoster();
   return (
     <section className="card team-summary">
-      <p className="eyebrow">FOLKENE BAK LAGET</p>
-      <h2>
-        En gjeng.
-        <br />
-        Et felles mål.
-      </h2>
       <div className="team-count">
         <strong>{roster.filter((p) => p.base_role === "player").length}</strong>
-        <span>
-          spillere
-          <br />
-          på laget
-        </span>
+        <span>spillere</span>
       </div>
       <Link className="inline-link" href="/roster">
-        Møt laget <ArrowUpRight size={16} />
+        Se laget <ArrowUpRight size={16} />
       </Link>
     </section>
   );

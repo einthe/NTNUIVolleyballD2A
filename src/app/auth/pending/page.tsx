@@ -12,7 +12,6 @@ export default async function Pending() {
       <span className="empty-icon">
         <Hourglass size={28} />
       </span>
-      <p className="eyebrow">SNART MED</p>
       <h2>Venter på godkjenning.</h2>
       <p className="auth-intro">
         Administrator må godkjenne kontoen før du får tilgang. Hvis du har fått en bekreftelseslenke

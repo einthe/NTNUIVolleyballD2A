@@ -3,8 +3,7 @@ import { ActionForm, Submit } from "@/components/forms";
 export default function SignUp() {
   return (
     <>
-      <p className="eyebrow">VELKOMMEN PÅ LAGET</p>
-      <h2>Her starter det.</h2>
+      <h2>Opprett konto</h2>
       <p className="auth-intro">
         Opprett en konto. Administrator gir deg tilgang til lagrommet når medlemskapet er godkjent.
       </p>

@@ -3,7 +3,6 @@ import { ActionForm, Submit } from "@/components/forms";
 export default function Recover() {
   return (
     <>
-      <p className="eyebrow">TILBAKE PÅ BANEN</p>
       <h2>Glemt passord?</h2>
       <p className="auth-intro">Vi sender deg en lenke for å velge et nytt passord.</p>
       <ActionForm auth>

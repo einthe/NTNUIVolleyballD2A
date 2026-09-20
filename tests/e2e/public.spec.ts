@@ -12,7 +12,7 @@ test("private pages redirect anonymous visitors and do not reveal team data", as
   ]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/auth\/sign-in/);
-    await expect(page.getByRole("heading", { name: "Godt å se deg igjen." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Logg inn" })).toBeVisible();
   }
 });
 test("registration and password recovery are reachable and accessible", async ({ page }) => {

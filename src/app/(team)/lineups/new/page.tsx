@@ -22,7 +22,6 @@ export default async function ChooseLineupMatch({
     <div className="narrow-page">
       <BackLink href="/feed">Tilbake til innlegg</BackLink>
       <PageHeading
-        eyebrow="SETT LAGET"
         title="Ny kampoppstilling"
         description="Velg kampen, sett opp spillerne og publiser oppstillingen i lagets feed."
       >

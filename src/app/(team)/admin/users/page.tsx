@@ -28,11 +28,7 @@ export default async function AdminUsers() {
   const players = playersResult.data as unknown as Player[];
   return (
     <>
-      <PageHeading
-        eyebrow="ET TRYGT LAGROM"
-        title="Brukere og tilganger"
-        description="Godkjenn nye medlemmer og fordel ansvar i laget."
-      />
+      <PageHeading title="Brukere og tilganger" />
       <div className="admin-stats">
         <div className="card">
           <strong>{users.filter((u) => u.account_status === "pending").length}</strong>

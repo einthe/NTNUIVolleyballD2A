@@ -17,12 +17,10 @@ export function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 export function PageHeading({
-  eyebrow,
   title,
   description,
   children,
 }: {
-  eyebrow: string;
   title: string;
   description?: string;
   children?: ReactNode;
@@ -30,7 +28,6 @@ export function PageHeading({
   return (
     <header className="page-heading">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
         <h1>
           {title}
           <span className="brand-dot">.</span>

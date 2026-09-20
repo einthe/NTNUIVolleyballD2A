@@ -12,7 +12,7 @@ export default async function NewEvent() {
   return (
     <div className="narrow-page">
       <BackLink href="/schedule">Tilbake til terminlisten</BackLink>
-      <PageHeading eyebrow="FYLL KALENDEREN" title="Ny hendelse" />
+      <PageHeading title="Ny hendelse" />
       <EventForm allowed={allowed} players={players.filter((p) => p.base_role === "player")} />
     </div>
   );

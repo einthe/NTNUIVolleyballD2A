@@ -16,7 +16,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
   return (
     <div className="narrow-page">
       <BackLink href={`/posts/${id}`}>Tilbake til innlegget</BackLink>
-      <PageHeading eyebrow="DEL MED LAGET" title="Rediger innlegg" />
+      <PageHeading title="Rediger innlegg" />
       <PostForm post={post} roles={roles} />
     </div>
   );

@@ -21,9 +21,7 @@ export default async function SignIn({
   const { error } = await searchParams;
   return (
     <>
-      <p className="eyebrow">DITT LAG. DITT LAGROM.</p>
-      <h2>Godt å se deg igjen.</h2>
-      <p className="auth-intro">Logg inn for å få med deg det som skjer i laget.</p>
+      <h2>Logg inn</h2>
       {!isConfigured() && (
         <p className="message info">
           Lagrommet klargjøres. Innlogging åpner når administrator har koblet til tjenesten.
@@ -72,7 +70,6 @@ export default async function SignIn({
           Opprett konto <ArrowRight size={14} />
         </Link>
       </div>
-      <p className="auth-footnote">Et privat rom for innlegg, terminliste og laget vårt.</p>
     </>
   );
 }
