@@ -120,10 +120,14 @@ test("feed failures stay contained and retry refetches content", async ({ page, 
   );
   const account = await provision("player");
   await login(page, account);
+  await expect(page.locator(".team-count")).toHaveCount(1);
   for (const [operation, title] of [
     ["posts", "Innleggene kunne ikke hentes"],
-    ["roster", "Lagoversikten kunne ikke hentes"],
+    ["schedule_events", "Terminlisten kunne ikke hentes"],
   ]) {
+    // Leave the feed before injecting a failure so an in-flight read cannot consume it.
+    await page.goto("/posts/new");
+    await expect(page.getByRole("button", { name: "Publiser innlegg" })).toBeVisible();
     await request.post(`${process.env.E2E_SUPABASE_URL}/__test/fail`, {
       headers: { Authorization: `Bearer ${process.env.E2E_SUPABASE_SERVICE_ROLE_KEY}` },
       data: { operation },

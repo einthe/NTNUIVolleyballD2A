@@ -1,0 +1,86 @@
+:root[data-palette="petrol"] {
+  --bg: #0c191e;
+  --panel: #14262d;
+  --panel-raised: #1c333c;
+  --sidebar: #101f25;
+  --border: #34505a;
+  --text: #e8f3f3;
+  --muted: #a4bcc2;
+  --accent: #8ad9d4;
+  --accent-dark: #183c42;
+}
+:root[data-palette="midnight"] {
+  --bg: #111624;
+  --panel: #1b2334;
+  --panel-raised: #263047;
+  --sidebar: #161c2b;
+  --border: #3c4963;
+  --text: #eef1fa;
+  --muted: #b0bad0;
+  --accent: #aac6ff;
+  --accent-dark: #263653;
+}
+:root[data-palette="plum"] {
+  --bg: #1c1420;
+  --panel: #2a1f30;
+  --panel-raised: #392b40;
+  --sidebar: #221927;
+  --border: #57415f;
+  --text: #f5edf6;
+  --muted: #c5afc9;
+  --accent: #ddafe4;
+  --accent-dark: #442d4b;
+}
+:root:is([data-palette="petrol"], [data-palette="midnight"], [data-palette="plum"]) {
+  --theme-ink: var(--bg);
+  --theme-hover: color-mix(in srgb, var(--accent), white 18%);
+  --theme-surface: var(--panel);
+  --theme-raised: var(--panel-raised);
+  --theme-border: var(--border);
+  --theme-text: var(--text);
+  --theme-muted: var(--muted);
+  --theme-dark: var(--accent-dark);
+  --theme-accent: var(--accent);
+  --theme-faint: color-mix(in srgb, var(--accent) 6%, transparent);
+  --theme-soft-border: color-mix(in srgb, var(--accent) 16%, transparent);
+  --theme-art: color-mix(in srgb, var(--accent) 40%, transparent);
+  --theme-art-solid: color-mix(in srgb, var(--accent) 50%, var(--bg));
+  --theme-court: color-mix(in srgb, var(--panel-raised), var(--accent-dark) 50%);
+  --theme-court-end: var(--panel);
+  --theme-glow: color-mix(in srgb, var(--accent-dark) 70%, transparent);
+  --theme-story: color-mix(in srgb, var(--bg), var(--accent-dark) 40%);
+}
+.palette-selector {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+}
+.palette-selector label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.palette-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.palette-choice select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  font-size: 12px;
+  padding: 8px;
+}
+.palette-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.auth-panel > .palette-selector {
+  margin-top: auto;
+  align-self: flex-end;
+  min-width: 175px;
+  padding: 0;
+}

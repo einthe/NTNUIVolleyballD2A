@@ -11,9 +11,11 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - A roster without email addresses or admin accounts; coach/admin position editing.
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.
 - In-app notifications, per-user read state, and 13 admin-controlled triggers, all disabled initially.
+- In-memory read caching with background refresh and list-to-detail reuse; see [cache design and verification](docs/read-cache.md).
+- Four color palettes: NTNUI, Petrol, Nattblå and Plomme. Choose **Fargepalett** in the account menu or on an authentication page. The choice is saved in this browser and synchronized between tabs; no account data is stored with it.
 - Database-enforced authorization, stale-edit checks, private image delivery, automated PostgreSQL/RLS tests, browser tests, and CI.
 
-Without Supabase configuration the application displays the sign-in/setup state. It does not expose a demo session or bypass private routes.
+The deployed application requires Supabase configuration and never exposes demo accounts. Local demo tooling runs separately from the application; authentication, permissions and RLS still apply.
 
 ### Post and lineup fixes
 
@@ -26,10 +28,37 @@ Decorative slogans, redundant captions, and repeated footer text have been remov
 ## Prerequisites
 
 - Node.js **24 LTS** and npm (`.nvmrc` is included).
-- A Supabase project, or the Supabase CLI and Docker for a local stack.
+- For connected development/deployment: a Supabase project, or the Supabase CLI and Docker for a local stack. The demo needs neither.
 - GitHub and Vercel accounts only when publishing the repository/deploying. The app also supports standard Node hosting via `npm start`.
 
-## Install and run
+## Local demo
+
+```sh
+npm ci
+npm run dev
+```
+
+Open **http://127.0.0.1:3000**. No Docker, Supabase project or `.env.local` is needed. Sign in with one of these fictional accounts; all use **`DemoVolleyball123!`**:
+
+| Email                | Access                                                             |
+| -------------------- | ------------------------------------------------------------------ |
+| `admin@demo.test`    | Administration, approvals, notifications and all content           |
+| `coach@demo.test`    | Matches, practices, player positions and lineup drafts/publication |
+| `player@demo.test`   | Regular player and captain; posts and read access                  |
+| `pending@demo.test`  | Pending approval screen                                            |
+| `disabled@demo.test` | Disabled account screen                                            |
+
+The demo contains 12 players with jerseys/positions, two coaches, secondary responsibilities, text/image posts, upcoming and past matches, training sessions, other event categories, volunteer assignments, notifications, a published lineup and an incomplete draft. Dates are relative to startup so upcoming events stay useful. Additional fictional roster accounts use their first names in lowercase at `@demo.test`, with the same password.
+
+Use the normal forms to create, edit and delete content, upload images, approve registrations and publish lineups. Changes survive browser reloads and hot reloads, but **stopping/restarting the command resets all demo data, passwords, sessions and uploaded files**. Stop with Ctrl+C. To change the app port, use `npm run dev -- --port 3001`.
+
+The launcher starts an in-memory PostgreSQL database (PGlite) with the real migrations and RLS, and a local HTTP adapter for Supabase Auth/Storage. Email delivery/confirmation and recovery links are simulated, so use a connected Supabase environment to test email flows and hosted-service behavior.
+
+Isolation: the launcher overrides Supabase/site variables only in its child process, even if `.env.local` points to a real project. It binds to loopback, uses `.next-demo`, writes no environment files, and refuses production/Vercel execution. Demo scripts and seed data are outside `src`, excluded from Vercel uploads, and never imported by the app. `npm run build` / `npm start` retain the normal production application and do not start or seed a demo backend.
+
+To develop against your own configured local or hosted Supabase project, use **`npm run dev:connected`** and follow the setup below. Browser integration tests also use that explicit command, so they cannot silently switch to demo data.
+
+## Connected Supabase setup
 
 ```sh
 npm ci
@@ -77,7 +106,7 @@ The application **does not need a service-role key**. Never put one in `NEXT_PUB
 7. Configure `.env.local`, then:
 
    ```sh
-   npm run dev
+   npm run dev:connected
    ```
 
 8. Open `http://localhost:3000`, register, confirm the email if enabled, and bootstrap the first admin.
@@ -118,7 +147,8 @@ Refresh the app. Administrasjon → Brukere og tilganger now allows approval as 
 ## Development and tests
 
 ```sh
-npm run dev
+npm run dev             # isolated fictional demo
+npm run dev:connected   # configured Supabase project
 npm run lint
 npm run typecheck
 npm test
@@ -133,12 +163,15 @@ Browser and accessibility tests:
 ```sh
 npx playwright install chromium
 npm run test:e2e:local
+npm run test:e2e:demo
 npm run test:e2e
 ```
 
+`test:e2e:demo` starts the same `npm run dev` launcher with deliberately invalid remote credentials and verifies seeded content, private images, role restrictions, post edits/deletes, registration and admin approval. It runs at desktop and mobile widths.
+
 Public tests run at desktop and mobile widths and verify route protection, private image denial, registration/recovery forms, keyboard use, WCAG checks, and horizontal overflow. Screenshots are written to `test-results/`.
 
-`test:e2e:local` runs both public and authenticated workflows without Docker or project credentials. It starts the real Next app on port 3100 and a loopback-only test adapter on port 54329. The adapter executes the production migration and RLS in PGlite and derives relationship cardinality from database constraints. Auth and Storage HTTP services are simulated; this catches application/rendering bugs but does not replace testing hosted Supabase. No application authentication bypass is added. The in-memory test database is discarded when the server stops.
+`test:e2e:local` runs both public and authenticated workflows without Docker or project credentials. It builds and starts the production Next app on port 3100 and a loopback-only test adapter on port 54329. The adapter executes the production migration and RLS in PGlite and derives relationship cardinality from database constraints. Auth and Storage HTTP services are simulated; this catches application/rendering bugs but does not replace testing hosted Supabase. No application authentication bypass is added. The in-memory test database is discarded when the server stops.
 
 Authenticated coverage includes post/image creation, private image access, editing, image removal, deletion, failed-upload retry, isolated feed errors, registration/approval, roster administration, event permissions, volunteer assignments, notifications, account disabling, and lineup drafts/publication/history/results. Failure-injection tests run only with the isolated adapter.
 
@@ -156,7 +189,7 @@ The GitHub Actions workflow runs code checks, builds, the isolated browser suite
 
 ## Architecture and security
 
-- Server Components fetch through a cookie-authenticated Supabase client. `proxy.ts` refreshes sessions; `requireAccount()` independently checks authentication and the current profile status before private data access.
+- The authenticated layout protects entry; client reads use a scoped, in-memory TanStack Query cache backed by cookie-authenticated `/api/team/[resource]` handlers. Every read checks current authentication, status and permissions, and returns `private, no-store`. Auth transitions clear private caches across tabs. `proxy.ts` verifies/refreshes sessions; Server Actions independently authorize writes. See [the cache contract](docs/read-cache.md).
 - Every private table has RLS. Browser roles have safe `SELECT` grants and no direct table mutations. Reviewed `SECURITY DEFINER` RPCs enforce current account status, ownership, event category, and role context, with an empty `search_path`. Internal trigger/notification functions are not executable by API roles.
 - Admin email lookup is a restricted RPC over `auth.users`. Profiles and roster queries have no email column.
 - Post authors and role context are captured by the database. Post edits preserve historical context. Each lineup save creates a version; published player snapshots are never rewritten. The feed points to the current published version.
@@ -168,7 +201,7 @@ The GitHub Actions workflow runs code checks, builds, the isolated browser suite
 
 ## Deliberate V1 choices
 
-- Brand accents are provisional muted green/lime, centralized in `globals.css`; role/event labels and colors are centralized in `src/lib/domain.ts`.
+- NTNUI is the default green/lime palette. Alternate theme tokens live in `src/app/palettes.css`, with palette names in `src/lib/palettes.ts`; role/event labels and colors are centralized in `src/lib/domain.ts`. Only the palette preference is persisted to localStorage; private query data is not.
 - Local fonts are bundled with the app. No third-party font requests or external image services are required.
 - `schedule_events.location` is the canonical venue; there is no redundant match venue field.
 - Event category is immutable after creation. Delete/recreate an incorrectly categorized event if it has no lineup history.

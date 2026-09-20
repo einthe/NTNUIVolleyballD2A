@@ -17,6 +17,7 @@ jobs:
       - run: npm run check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e:local
+      - run: npm run test:e2e:demo
       - run: npm run test:e2e
   supabase-integration:
     runs-on: ubuntu-latest

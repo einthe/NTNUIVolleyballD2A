@@ -33,7 +33,7 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
   await page.goto("/feed");
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
   await expect(page.locator(".small-event").filter({ hasText: eventTitle })).toBeVisible();
-  await expect(page.locator(".team-count")).toBeVisible();
+  await expect(page.locator(".team-count")).toHaveCount(1);
   await page.evaluate(() => {
     (window as unknown as Record<string, unknown>).__documentMarker = "same-document";
   });
@@ -180,7 +180,7 @@ test("private reads enforce scope, permissions, sign-out and account changes", a
   await expect(page.getByRole("link", { name: "Kampoppstilling", exact: true })).toHaveCount(0);
   await page.goto("/lineups/new");
   await expect(page).toHaveURL(/\/feed$/);
-  await expect(page.locator(".team-count")).toBeVisible();
+  await expect(page.locator(".team-count")).toHaveCount(1);
   const disabled = await player.service
     .from("profiles")
     .update({ account_status: "disabled" })

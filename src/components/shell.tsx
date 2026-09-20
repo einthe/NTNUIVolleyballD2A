@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { CalendarDays, LayoutDashboard, Users, ShieldCheck, Bell, CheckCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { baseRoles } from "@/lib/domain";
+import { PaletteSelector } from "./palette-selector";
 import { SignOutButton } from "./sign-out-button";
 import { useTeam } from "./team-provider";
 import { useQuery } from "@tanstack/react-query";
@@ -135,6 +136,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 </span>
               </summary>
               <div className="dropdown account-dropdown">
+                <PaletteSelector />
                 <Link href="/auth/update-password">Endre passord</Link>
                 <SignOutButton />
               </div>
