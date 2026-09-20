@@ -4,6 +4,7 @@ import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 import { eventTone, eventHighlight, eventTypes, type TeamEvent } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
 import { importedMatchStatus } from "@/lib/event-dates";
+import { DiscussionCounts } from "./discussion-counts";
 import { Badge } from "./ui";
 export function EventCard({ event, href }: { event: TeamEvent; href?: string }) {
   return (
@@ -49,6 +50,7 @@ export function EventCard({ event, href }: { event: TeamEvent; href?: string }) 
       ) : (
         <ArrowUpRight size={19} className="event-arrow" />
       )}
+      <DiscussionCounts counts={event.discussion_counts} />
     </Link>
   );
 }
@@ -63,7 +65,7 @@ export function SmallEvent({ event }: { event: TeamEvent }) {
         <strong>{event.starts_at ? dateLabel(event.starts_at, "dd") : "–"}</strong>
         <span>{event.starts_at ? dateLabel(event.starts_at, "MMM") : "Dato"}</span>
       </div>
-      <div>
+      <div className="small-event-content">
         <span className={`event-type-text tone-${eventTone[event.event_type]}`}>
           {eventTypes[event.event_type]}
           {event.creator_base_role_snapshot === "coach" && " · Trener"}
@@ -79,6 +81,7 @@ export function SmallEvent({ event }: { event: TeamEvent }) {
           {event.location && `· ${event.location}`}
         </small>
       </div>
+      <DiscussionCounts counts={event.discussion_counts} />
     </Link>
   );
 }

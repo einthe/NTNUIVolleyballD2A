@@ -81,6 +81,20 @@ async function withAuthorPhotos(posts: Post[]): Promise<Post[]> {
     author_photo_path: photos.get(post.author_user_id) ?? null,
   }));
 }
+async function withDiscussionCounts<T extends { id: string }>(items: T[], kind: "post" | "event") {
+  if (!items.length) return items;
+  const db = await createClient();
+  const { data, error } = await db.rpc("get_discussion_counts", {
+    data: { target_type: kind, ids: items.map((item) => item.id) },
+  });
+  // An optional summary must never prevent posts/events from loading during a rollout.
+  if (error) {
+    console.warn("Discussion counts unavailable; check the discussion-counts migration.");
+    return items;
+  }
+  const counts = data as Record<string, import("@/lib/discussions").DiscussionCounts>;
+  return items.map((item) => ({ ...item, discussion_counts: counts[item.id] }));
+}
 export async function getPosts(page = 1, kind?: string, account?: Profile) {
   if (!account) await requireAccount();
   const db = await createClient();
@@ -93,7 +107,17 @@ export async function getPosts(page = 1, kind?: string, account?: Profile) {
   if (kind === "roles") query = query.not("secondary_role_context_key", "is", null);
   const { data, error, count } = await query.range((page - 1) * 12, page * 12 - 1);
   if (error) throw new Error("Kunne ikke hente innlegg.");
-  return { posts: await withAuthorPhotos(data as Post[]), count: count ?? 0 };
+  const [posts, counted] = await Promise.all([
+    withAuthorPhotos(data as Post[]),
+    withDiscussionCounts(data as Post[], "post"),
+  ]);
+  return {
+    posts: posts.map((post, index) => ({
+      ...post,
+      discussion_counts: counted[index].discussion_counts,
+    })),
+    count: count ?? 0,
+  };
 }
 export async function getPost(id: string, account?: Profile) {
   if (!account) await requireAccount();
@@ -123,7 +147,10 @@ export async function getEvents(past = false, kind?: string, page = 1, account?:
   if (kind) query = query.eq("event_type", kind);
   const { data, error, count } = await query.range((page - 1) * 24, page * 24 - 1);
   if (error) throw new Error("Kunne ikke hente terminlisten.");
-  return { events: data as unknown as TeamEvent[], count: count ?? 0 };
+  return {
+    events: await withDiscussionCounts(data as unknown as TeamEvent[], "event"),
+    count: count ?? 0,
+  };
 }
 export async function getEvent(id: string, account?: Profile) {
   if (!account) await requireAccount();

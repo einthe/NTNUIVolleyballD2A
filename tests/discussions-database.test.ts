@@ -206,6 +206,53 @@ it("stores only Giphy IDs, deduplicates reactions and only removes the caller's 
     rpc("set_meme_reaction", { ...reaction, target_type: "event", target_id: event }),
   );
 });
+it("returns private batched totals, includes replies, excludes deleted comments and counts individual reactions", async () => {
+  const counts = { target_type: "post", ids: [otherPost] };
+  expect(await as("player", () => rpc("get_discussion_counts", counts))).toEqual({
+    [otherPost]: { comment_count: 0, reaction_count: 0 },
+  });
+  const root = create({ target_id: otherPost });
+  await as("player", () => rpc("save_comment", root));
+  await as("coach", () =>
+    rpc("save_comment", create({ target_id: otherPost, parent_id: root.id })),
+  );
+  const reaction = { target_type: "post", target_id: otherPost, giphy_id: "SameGif", active: true };
+  for (const actor of ["player", "coach"] as const)
+    await as(actor, () => rpc("set_meme_reaction", reaction));
+  expect(await as("player", () => rpc("get_discussion_counts", counts))).toEqual({
+    [otherPost]: { comment_count: 2, reaction_count: 2 },
+  });
+  await as("player", () => rpc("delete_comment", { ...root, expected_version: 0 }));
+  await as("coach", () => rpc("set_meme_reaction", { ...reaction, active: false }));
+  expect(await as("coach", () => rpc("get_discussion_counts", counts))).toEqual({
+    [otherPost]: { comment_count: 1, reaction_count: 1 },
+  });
+  expect(
+    await as("player", () => rpc("get_discussion_counts", { target_type: "event", ids: [event] })),
+  ).toEqual({ [event]: { comment_count: 3, reaction_count: 1 } });
+  for (const actor of ["pending", "disabled"] as const)
+    await expect(as(actor, () => rpc("get_discussion_counts", counts))).rejects.toThrow(
+      "not_authorized",
+    );
+  await db.exec("set role anon");
+  try {
+    await expect(rpc("get_discussion_counts", counts)).rejects.toThrow("permission denied");
+  } finally {
+    await db.exec("reset role");
+  }
+  await expect(
+    as("player", () =>
+      rpc("get_discussion_counts", { ...counts, ids: Array(101).fill(otherPost) }),
+    ),
+  ).rejects.toThrow("too_many_targets");
+  await expect(
+    as("player", () => rpc("get_discussion_counts", { ...counts, target_type: "invalid" })),
+  ).rejects.toThrow("invalid_target");
+  expect(await as("player", () => rpc("get_discussion_counts", { ...counts, ids: [] }))).toEqual(
+    {},
+  );
+  await db.query("delete from posts where id=$1", [otherPost]);
+});
 it("cascades discussions when their post or event is removed", async () => {
   await db.query("delete from posts where id=$1", [post]);
   await db.query("delete from schedule_events where id=$1", [event]);

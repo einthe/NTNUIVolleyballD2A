@@ -18,6 +18,7 @@ import { Avatar, Badge } from "./ui";
 import { Court } from "./court";
 import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
+import { DiscussionCounts } from "./discussion-counts";
 import { LinkedText } from "./linked-text";
 export function PostCard({
   post,
@@ -128,6 +129,7 @@ export function PostCard({
           </Link>
         )}
       </footer>
+      {!detail && <DiscussionCounts counts={post.discussion_counts} />}
       {detail && editable && (
         <div className="post-delete">
           <DeleteButton action="delete-post" id={post.id} label="Slett innlegg" />

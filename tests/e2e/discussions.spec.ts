@@ -58,12 +58,22 @@ test("post comments support replies, editing, links, deletion and persistent thr
   await login(page, account);
   await expect(page.getByRole("button", { name: "Publiser kommentar" })).toHaveCount(0);
   const url = await newPost(page, account.name);
+  await page.getByRole("link", { name: "Tilbake til innlegg", exact: true }).click();
+  const card = page
+    .locator(".post-card")
+    .filter({ has: page.getByRole("heading", { name: `Diskusjon ${account.name}`, exact: true }) });
+  await expect(card).toBeVisible();
+  await expect(card.locator(".discussion-counts")).toHaveCount(0);
+  await card.getByRole("link", { name: `Diskusjon ${account.name}`, exact: true }).click();
   await page
     .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
     .fill("Første kommentar https://example.com/info");
   await page.getByRole("button", { name: "Publiser kommentar" }).click();
   const roots = page.locator(".comment-threads > .comment-thread");
   await expect(roots).toHaveCount(1);
+  await page.getByRole("link", { name: "Tilbake til innlegg", exact: true }).click();
+  await expect(card.getByText("1 kommentar", { exact: true })).toBeVisible();
+  await card.getByRole("link", { name: `Diskusjon ${account.name}`, exact: true }).click();
   const root = roots.first().locator(":scope > article");
   await expect(root.getByRole("link", { name: "https://example.com/info" })).toHaveAttribute(
     "href",
@@ -100,7 +110,9 @@ test("post comments support replies, editing, links, deletion and persistent thr
   await page.reload();
   await expect(page.getByText("Et nøstet svar", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.goto("/feed");
+  await page.getByRole("link", { name: "Tilbake til innlegg", exact: true }).click();
+  await expect(card.getByText("2 kommentarer", { exact: true })).toBeVisible();
+  await expect(card.locator(".meme-count")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Reager med et meme" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publiser kommentar" })).toHaveCount(0);
   await page.goto(url);
@@ -200,6 +212,12 @@ test("Giphy search, pagination, error recovery, reaction counts and removal work
   await page.keyboard.press("Escape");
   await expect(picker).not.toBeVisible();
   await expect(launch).toBeFocused();
+  await page.getByRole("link", { name: "Tilbake til innlegg", exact: true }).click();
+  const card = page
+    .locator(".post-card")
+    .filter({ has: page.getByRole("heading", { name: `Diskusjon ${account.name}`, exact: true }) });
+  await expect(card.getByText("1 reaksjon", { exact: true })).toBeVisible();
+  await expect(card.locator(".comment-count")).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -255,6 +273,12 @@ test("ordinary members can discuss events, cannot moderate others, and comments 
   await memberPage.getByRole("button", { name: "Publiser kommentar" }).click();
   await expect(memberPage.getByText("Kommentar uten Giphy", { exact: true })).toBeVisible();
   await memberContext.close();
-  await page.goto("/schedule");
+  await page.getByRole("link", { name: "Tilbake til terminlisten", exact: true }).click();
+  const eventCard = page
+    .locator(".event-card")
+    .filter({ has: page.getByRole("heading", { name: title, exact: true }) });
+  await expect(eventCard.getByText("3 kommentarer", { exact: true })).toBeVisible();
+  await expect(eventCard.getByText("1 reaksjon", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.getByRole("button", { name: "Reager med et meme" })).toHaveCount(0);
 });

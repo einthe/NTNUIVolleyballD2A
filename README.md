@@ -87,6 +87,7 @@ Edit `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_URL`             | Project URL from Supabase → Project Settings → API.                                                                                  |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_…`), or the local/legacy anon key. Safe for the browser; RLS protects data.                         |
 | `NEXT_PUBLIC_SITE_URL`                 | Exact app origin, e.g. `http://localhost:3000` or `https://ntnuivolleyballd2a.no`. Used in auth redirects.                           |
+| `NEXT_PUBLIC_GIPHY_API_KEY`          | GIPHY browser API key; required for meme reactions. Set in Vercel Production (and Preview if used) before building. |
 | `MAX_IMAGE_SIZE_MB`                    | Optional application upload limit; defaults to 3 MB to fit Vercel request limits; capped at the bucket's 10 MB limit on other hosts. |
 
 The application **does not need a service-role key**. Never put one in `NEXT_PUBLIC_*`, source files, or browser code. Hosted Supabase connection details are not included in this repository.
@@ -250,7 +251,7 @@ Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/mi
 
 1. Create a GitHub repository and push these files, including `package-lock.json` and migrations. Do not commit `.env.local`.
 2. Import the repository into Vercel as a Next.js project, with the project root as the root directory and Node.js 24.
-3. Set the three required environment variables above for production. Use the production Supabase URL/key and `NEXT_PUBLIC_SITE_URL=https://ntnuivolleyballd2a.no`.
+3. Set the Supabase URL/key and `NEXT_PUBLIC_SITE_URL=https://ntnuivolleyballd2a.no` for Production. Also set `NEXT_PUBLIC_GIPHY_API_KEY` to enable meme reactions. Local `.env.local` values are not uploaded to Vercel; add them in the project’s Environment Variables settings. After changing a `NEXT_PUBLIC_` variable, create a new deployment so the browser bundle includes it.
 4. Apply migrations to the production Supabase project **before** deploying the app. Bootstrap the admin after registration.
 5. Deploy using the default `npm run build` build command. No Vercel-specific data services are required.
 6. Add `ntnuivolleyballd2a.no` in Vercel → Project → Settings → Domains. Apply the exact DNS records Vercel supplies at your domain registrar and wait for domain/TLS verification. Add `www` only if you want it and redirect it to the canonical domain.

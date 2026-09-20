@@ -1,6 +1,6 @@
 # Comments and meme reactions
 
-Every post (including published lineups) and every event has a discussion section on its detail page. Feed and schedule cards do not show comment/reaction controls. Approved players, coaches and admins can participate.
+Every post (including published lineups) and every event has a discussion section on its detail page. Feed and schedule cards show nonzero comment totals in the lower left and reaction totals in the lower right. These include replies, exclude deleted comments, and count each member’s meme reaction separately. Cards do not show comment/reaction controls. Approved players, coaches and admins can participate.
 
 Comments support nested replies, connecting thread lines, links typed as normal text, and 3,000 characters per comment. Authors can edit/delete their comments; admins can delete any comment. Deletion removes the body and preserves a placeholder and its replies. Replies link back to their parent. Indentation stops growing on small screens, while parent links preserve context. The database caps nesting at 32 replies; deeper conversations can continue under an earlier comment.
 
@@ -8,7 +8,7 @@ Reactions use GIFs selected through GIPHY, with no emoji or upload alternative. 
 
 ## Setup
 
-1. Apply `supabase/migrations/202609200006_discussions.sql` to the connected Supabase project before deploying the app (`supabase db push` for a linked project). This adds tables/functions without resetting existing data.
+1. Apply `supabase/migrations/202609200006_discussions.sql` to the connected Supabase project before deploying the app (`supabase db push` for a linked project). This adds tables/functions without resetting existing data. Also apply `supabase/migrations/202609200007_discussion_counts.sql` for card totals. If that migration is missing, posts/events still load, but counts remain hidden.
 2. Sign in at [GIPHY Developers](https://developers.giphy.com/dashboard/), create an **API** key for the web app, and add this to `.env.local`:
 
    ```env
@@ -20,6 +20,14 @@ Reactions use GIFs selected through GIPHY, with no emoji or upload alternative. 
 GIPHY requires direct browser requests, so this is intentionally a public browser key, not a server secret. Do not commit `.env.local`. New beta keys are currently limited to 100 API calls/hour; check the [official quickstart and production upgrade process](https://developers.giphy.com/docs/api/) for current limits and requirements. A search, a search page, or resolving stored GIF IDs consumes API calls.
 
 Without a configured key, comments remain available and the meme button displays as unavailable. Provider/network/rate-limit errors include retry feedback. Automated tests intercept only GIPHY browser requests; the configured local key was also verified manually with live search, image loading and reaction persistence.
+
+## Deployment shows “Memes er ikke tilgjengelige ennå”
+
+This specific message means the browser bundle was built without a non-empty `NEXT_PUBLIC_GIPHY_API_KEY`. It appears before any GIPHY API request, so it is not a GIPHY quota or search error.
+
+In Vercel, open the project’s **Settings → Environment Variables** and add `NEXT_PUBLIC_GIPHY_API_KEY` with the key from your local `.env.local`. Enable **Production**, and **Preview** if you use preview deployments. Save, then **redeploy** the application. Existing deployments retain their old values; refreshing the page alone cannot update a build-time variable. Once the new deployment is ready, reload the production URL.
+
+Reference: [Vercel environment variable setup and redeployment](https://vercel.com/docs/environment-variables/managing-environment-variables).
 
 ## Storage and permissions
 

@@ -82,6 +82,7 @@ export type Match = {
   opponent_sets: number | null;
 };
 export type TeamEvent = {
+  discussion_counts?: import("./discussions").DiscussionCounts;
   id: string;
   event_type: EventType;
   title: string;
@@ -126,6 +127,7 @@ export type Lineup = {
   schedule_events: TeamEvent;
 };
 export type Post = {
+  discussion_counts?: import("./discussions").DiscussionCounts;
   author_photo_path?: string | null;
   id: string;
   author_user_id: string;

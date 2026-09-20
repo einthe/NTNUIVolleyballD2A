@@ -1,7 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { queries } from "@/lib/cache/queries";
+import { keys, queries } from "@/lib/cache/queries";
 import { commentThreads, type CommentThread, type DiscussionTarget } from "@/lib/discussions";
 import { updateDiscussion } from "@/server/discussion-actions";
 import { dateLabel } from "@/lib/dates";
@@ -27,7 +27,13 @@ export function Discussion({ target }: { target: DiscussionTarget }) {
   const save: Save = async (action, data) => {
     try {
       const result = await updateDiscussion(action, { ...data, ...target });
-      if (!result.error) await client.invalidateQueries({ queryKey: options.queryKey });
+      if (!result.error)
+        await Promise.all([
+          client.invalidateQueries({ queryKey: options.queryKey }),
+          client.invalidateQueries({
+            queryKey: target.target_type === "post" ? keys.posts(scope) : keys.events(scope),
+          }),
+        ]);
       return result;
     } catch {
       return { error: "Kunne ikke lagre. Kontroller forbindelsen og prøv igjen." };

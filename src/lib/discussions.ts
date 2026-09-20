@@ -52,3 +52,5 @@ export function commentThreads(comments: DiscussionComment[]): CommentThread[] {
   }
   return roots;
 }
+
+export type DiscussionCounts = { comment_count: number; reaction_count: number };

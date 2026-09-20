@@ -3290,3 +3290,41 @@ legend {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.discussion-counts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.discussion-counts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.discussion-counts .meme-count {
+  margin-left: auto;
+}
+.post-card > .discussion-counts {
+  margin: 0 23px;
+  padding-bottom: 14px;
+}
+.event-card,
+.small-event {
+  flex-wrap: wrap;
+}
+.event-card > .discussion-counts,
+.small-event > .discussion-counts {
+  flex-basis: 100%;
+}
+.small-event-content {
+  flex: 1;
+  min-width: 0;
+}
+.small-event > .discussion-counts {
+  font-size: 9px;
+}
