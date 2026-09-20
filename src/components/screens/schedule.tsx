@@ -51,7 +51,9 @@ function ScheduleView({
   const canCreate = (Object.keys(eventTypes) as EventType[]).some((type) =>
     canManageEvent(profile, roles, type),
   );
-  const groups = Object.groupBy(events, (event) => dateLabel(event.starts_at, "MMMM yyyy"));
+  const groups = Object.groupBy(events, (event) =>
+    event.starts_at ? dateLabel(event.starts_at, "MMMM yyyy") : "Dato ikke fastsatt",
+  );
   return (
     <>
       <PageHeading title="Terminliste">

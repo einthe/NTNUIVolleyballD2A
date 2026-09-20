@@ -86,10 +86,15 @@ export type TeamEvent = {
   event_type: EventType;
   title: string;
   description: string | null;
-  starts_at: string;
+  starts_at: string | null;
   ends_at: string | null;
   location: string | null;
-  created_by_user_id: string;
+  created_by_user_id: string | null;
+  external_source?: string | null;
+  external_source_url?: string | null;
+  external_status?: "scheduled" | "postponed" | "cancelled" | "unavailable" | null;
+  external_time_unknown?: boolean;
+  last_synced_at?: string | null;
   creator_base_role_snapshot?: BaseRole | null;
   updated_at: string;
   match_details: Match | null;
@@ -165,7 +170,7 @@ export function canManageEvent(
   profile: Profile,
   roles: SecondaryRole[],
   type: EventType,
-  creator?: string,
+  creator?: string | null,
 ) {
   if (profile.account_status !== "approved") return false;
   if (profile.base_role === "admin") return true;

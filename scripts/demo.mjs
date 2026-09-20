@@ -22,7 +22,8 @@ if (!["localhost", "127.0.0.1"].includes(values.hostname)) {
 }
 const origin = `http://${values.hostname}:${port}`;
 console.log("Preparing fictional demo data in an isolated, temporary local database…");
-const backend = await startLocalBackend({ port: 0, serviceKey: randomUUID(), seed: seedDemo });
+const serviceKey = randomUUID();
+const backend = await startLocalBackend({ port: 0, serviceKey, seed: seedDemo });
 console.log(`
 LOCAL DEMO — ${origin}
   Admin:   admin@demo.test
@@ -55,6 +56,8 @@ const child = spawn(
       NEXT_PUBLIC_SUPABASE_URL: backend.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "local-demo-publishable-key",
       NEXT_PUBLIC_SITE_URL: origin,
+      SUPABASE_SECRET_KEY: serviceKey,
+      VOLLEYBALL_MATCH_SYNC_ENABLED: process.env.VOLLEYBALL_MATCH_SYNC_ENABLED ?? "0",
     },
   },
 );

@@ -96,6 +96,7 @@ export const queries = {
           page: String(page),
         }),
       staleTime: cacheTimes.events,
+      refetchInterval: 24 * 60 * 60_000,
     }),
   event: (scope: string, id: string, client: QueryClient) =>
     queryOptions<TeamEvent | null>({

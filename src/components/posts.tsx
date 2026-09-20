@@ -1,4 +1,5 @@
 "use client";
+import { eventDateLabel } from "@/lib/event-dates";
 import { useState, useId, useContext, type CSSProperties } from "react";
 import { TeamContext } from "./team-provider";
 /* eslint-disable @next/next/no-img-element -- Private authenticated media must bypass shared optimizer caches. */
@@ -87,8 +88,8 @@ export function PostCard({
         {lineup && revision && (
           <>
             <p className="lineup-match-meta">
-              <CalendarDays size={15} /> {dateLabel(lineup.schedule_events.starts_at)}{" "}
-              <span>·</span> {lineup.schedule_events.location}
+              <CalendarDays size={15} /> {eventDateLabel(lineup.schedule_events)} <span>·</span>{" "}
+              {lineup.schedule_events.location}
             </p>
             <Court slots={revision.lineup_revision_slots} compact />
             <Link className="inline-link" href={`/schedule/${lineup.match_event_id}`}>

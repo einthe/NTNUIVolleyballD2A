@@ -23,6 +23,8 @@ The settings response at `TournamentStandings/Settings/449623` identifies volley
 
 `goalsConceeded` is NIF's actual spelling. Rows retain upstream order and rank, keyed by `entryId`; unknown statistics show a dash, not a calculated value or zero. Duplicate entry IDs and malformed data are rejected. Tournament identity, season, volleyball sport ID and publication status are validated before rows are returned. Unpublished tables show an empty state.
 
+Display names for NTNUI 2/3/4 are mapped to NTNUI D2A/D2B/D2C by the shared team-name helper, also used by the [daily match import](volleyball-matches.md). Source identifiers and official ranking order are preserved.
+
 The requested tournament currently identifies itself as **Trøndelag - 2. divisjon - Kvinner**, season **Volleyballsesongen 2026/2027**, with nine teams and all match statistics at zero. Those are source values, not demo placeholders. Confirm the competition IDs if a different division was intended.
 
 ## Maintenance and verification

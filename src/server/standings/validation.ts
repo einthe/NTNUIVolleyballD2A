@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { Standing } from "@/lib/standings";
 import { StandingsError } from "./config";
+import { volleyballTeamName } from "@/lib/volleyball-teams";
 
 const integer = z.number().int().safe();
 const optionalStat = integer.nullish().transform((value) => value ?? null);
@@ -19,6 +20,7 @@ const rowsSchema = z.array(
     entryId: integer.positive(),
     position: integer.positive().nullish(),
     orgName: z.string().trim().min(1),
+    orgId: integer.positive().nullish(),
     matches: optionalStat,
     victories: optionalStat,
     losses: optionalStat,
@@ -39,7 +41,7 @@ export function normalizeRows(input: unknown): Standing[] {
   return parsed.data.map((row) => ({
     id: row.entryId,
     rank: row.position ?? null,
-    team: row.orgName,
+    team: volleyballTeamName(row.orgName, row.orgId),
     played: row.matches,
     wins: row.victories,
     losses: row.losses,

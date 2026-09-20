@@ -1,34 +1,8 @@
 import "server-only";
 import type { Standings } from "@/lib/standings";
-import { accessToken, forgetToken } from "./auth";
+import { readTournamentApi as read } from "@/server/volleyball/client";
 import { StandingsError, type StandingsConfig } from "./config";
 import { normalizeRows, tournamentSchema } from "./validation";
-
-async function read(config: StandingsConfig, path: string): Promise<unknown> {
-  const base =
-    config.source === "nif"
-      ? "https://data.nif.no/api/v1/ta/"
-      : "https://sf48-terminlister-prod-app.azurewebsites.net/ta/";
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const token = config.source === "nif" ? await accessToken() : undefined;
-    const response = await fetch(`${base}${path}?tournamentId=${config.tournamentId}`, {
-      cache: "no-store",
-      redirect: "error",
-      signal: AbortSignal.timeout(10_000),
-      headers: {
-        Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-    if (response.status === 401 && token) {
-      forgetToken(token);
-      if (attempt === 0) continue;
-    }
-    if (!response.ok) throw new StandingsError();
-    return response.json();
-  }
-  throw new StandingsError();
-}
 
 export async function fetchStandings(config: StandingsConfig): Promise<Standings> {
   try {

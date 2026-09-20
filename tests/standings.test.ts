@@ -25,7 +25,12 @@ describe("volleyball standings", () => {
   it("accepts the captured public response and keeps official row order and ranks", () => {
     const rows = normalizeRows(fixture.rows);
     expect(rows).toHaveLength(9);
-    expect(rows.map((row) => row.team)).toEqual(fixture.rows.map((row) => row.orgName));
+    expect(rows.map((row) => row.id)).toEqual(fixture.rows.map((row) => row.entryId));
+    expect(rows.filter((row) => row.team.startsWith("NTNUI")).map((row) => row.team)).toEqual([
+      "NTNUI D2A",
+      "NTNUI D2B",
+      "NTNUI D2C",
+    ]);
     const unordered = [fixture.rows[3], fixture.rows[0], fixture.rows[2]];
     expect(normalizeRows(unordered).map((row) => row.rank)).toEqual([4, 1, 3]);
   });

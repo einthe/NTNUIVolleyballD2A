@@ -48,7 +48,7 @@ memory after 15 minutes.
 | Events / notification settings | 60 seconds | Stale mount, window focus, reconnect      |
 | Roster                         | 5 minutes  | Stale mount, window focus, reconnect      |
 
-There are no polling timers. Feed and event records seed complete records into matching detail queries in the same scope, marked
+Standings and event lists refresh every 24 hours while the page is visible; other reads use the triggers above. The daily server-side match import is described in [VolleyballLive matches](volleyball-matches.md). Feed and event records seed complete records into matching detail queries in the same scope, marked
 stale so a canonical read always runs. Failed canonical reads retain those records. Roster search and editor player choices reuse the same roster query.
 Lineup records are cached separately from posts so they can refresh independently.
 No speculative database prefetching is added: Next Link prefetches route shells,

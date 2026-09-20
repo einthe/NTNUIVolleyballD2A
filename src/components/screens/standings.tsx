@@ -57,7 +57,10 @@ function StandingsView({ data }: { data: StandingsData }) {
             </thead>
             <tbody>
               {data.rows.map((row) => (
-                <tr key={row.id}>
+                <tr
+                  key={row.id}
+                  className={row.team === "NTNUI D2A" ? "standings-team-highlight" : undefined}
+                >
                   <td>{row.rank ?? "–"}</td>
                   <th scope="row">{row.team}</th>
                   {columns.map((column) => (

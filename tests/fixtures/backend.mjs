@@ -156,6 +156,26 @@ export async function startLocalBackend({
     const clauses = [],
       args = [];
     for (const [key, value] of params) {
+      if (key === "or") {
+        const parts = value
+          .slice(1, -1)
+          .split(",")
+          .map((part) => {
+            const at = part.indexOf(".");
+            const nested = filters(
+              table,
+              new URLSearchParams([[part.slice(0, at), part.slice(at + 1)]]),
+            );
+            const clause = nested.where
+              .slice(7)
+              .replace(/\$(\d+)/g, (_, n) => `$${args.length + Number(n)}`);
+            args.push(...nested.args);
+            if (!clause) throw new Error("Unsupported test OR filter");
+            return clause;
+          });
+        clauses.push(`(${parts.join(" or ")})`);
+        continue;
+      }
       if (!columns.get(table)?.has(key)) continue;
       const column = identifier(key);
       if (value === "not.is.null") {

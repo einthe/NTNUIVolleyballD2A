@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient, isConfigured } from "@/lib/supabase/server";
+import { refreshMatchesIfDue } from "@/server/volleyball/sync";
 import type {
   Player,
   Profile,
@@ -108,6 +109,7 @@ const eventSelect =
   "*,match_details(opponent,home_away,team_sets,opponent_sets),volunteer_assignments(player_user_id)";
 export async function getEvents(past = false, kind?: string, page = 1, account?: Profile) {
   if (!account) await requireAccount();
+  if (!kind || kind === "match") await refreshMatchesIfDue();
   const db = await createClient();
   let query = db
     .from("schedule_events")
@@ -116,7 +118,7 @@ export async function getEvents(past = false, kind?: string, page = 1, account?:
     .order("id");
   query = past
     ? query.lt("starts_at", new Date().toISOString())
-    : query.gte("starts_at", new Date().toISOString());
+    : query.or(`starts_at.gte.${new Date().toISOString()},starts_at.is.null`);
   if (kind) query = query.eq("event_type", kind);
   const { data, error, count } = await query.range((page - 1) * 24, page * 24 - 1);
   if (error) throw new Error("Kunne ikke hente terminlisten.");

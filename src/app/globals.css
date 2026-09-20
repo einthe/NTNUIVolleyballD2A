@@ -230,6 +230,15 @@ small {
 .standings-table tbody tr:last-child > * {
   border-bottom: 0;
 }
+.standings-team-highlight {
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+}
+.standings-team-highlight > :first-child {
+  box-shadow: inset 3px 0 var(--accent);
+}
+.standings-team-highlight th[scope="row"] {
+  color: var(--accent);
+}
 .standings-source {
   display: flex;
   flex-wrap: wrap;
@@ -1822,11 +1831,6 @@ legend {
   flex-wrap: wrap;
   min-height: 30px;
   margin-top: 23px;
-}
-.player-roles:empty:before {
-  content: "En del av laget";
-  font-size: 10px;
-  color: var(--theme-muted, #8c9b83);
 }
 .position-editor {
   border-top: 1px solid var(--border);

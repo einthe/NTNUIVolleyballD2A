@@ -27,6 +27,8 @@ function friendlyError(message: string) {
     return "Draktnummeret er allerede i bruk. Velg et annet nummer.";
   if (message.includes("lineup_history_exists"))
     return "Kampen har en lagret oppstilling og må bevares. Oppdater kampbeskrivelsen ved avlysning.";
+  if (message.includes("external_event_readonly"))
+    return "Denne kampen oppdateres automatisk fra VolleyballLive.";
   if (message.includes("invalid_player_position"))
     return "En valgt spiller har ikke lenger riktig spillerposisjon. Oppdater oppstillingen før du lagrer.";
   if (message.includes("not_authorized") || message.includes("invalid_role"))
@@ -168,6 +170,21 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         }
       }
       destination = `/posts/${id}`;
+    } else if (kind === "match-title") {
+      const input = z
+        .object({
+          id: uuid,
+          title: z.string().trim().min(1).max(160),
+          expected_updated_at: z.string().datetime({ offset: true }),
+        })
+        .parse({
+          id: text("id"),
+          title: text("title"),
+          expected_updated_at: text("expected_updated_at"),
+        });
+      change.kind = "event";
+      change.id = await rpc("set_imported_match_title", { data: input });
+      destination = `/schedule/${change.id}`;
     } else if (kind === "event") {
       const input = eventSchema.parse({
         id: text("id") || undefined,
@@ -178,7 +195,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         ends_at: text("ends_at") ? toUTC(text("ends_at")) : null,
         location: nullable("location"),
         opponent: nullable("opponent"),
-        home_away: text("home_away") || "home",
+        home_away: "neutral",
         team_sets: number("team_sets"),
         opponent_sets: number("opponent_sets"),
         assignments: form.getAll("assignments"),

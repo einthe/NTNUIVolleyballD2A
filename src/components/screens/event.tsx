@@ -10,8 +10,8 @@ import type { CSSProperties } from "react";
 import { CalendarDays, MapPin, Pencil, Volleyball } from "lucide-react";
 import { canCoach, canManageEvent, eventTypes, eventTone, eventHighlight } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
+import { eventDateLabel, importedMatchStatus } from "@/lib/event-dates";
 import { BackLink, Badge } from "@/components/ui";
-import { homeAway } from "@/components/events";
 import { Court } from "@/components/court";
 import { DeleteButton } from "@/components/forms";
 export default function EventPage() {
@@ -28,6 +28,7 @@ export default function EventPage() {
 function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
   const { profile, roles, scope } = useTeam();
   const id = event.id;
+  const imported = event.external_source === "volleyballlive";
   const editable = canManageEvent(profile, roles, event.event_type, event.created_by_user_id);
   const lineupQuery = useQuery({
     ...queries.lineup(scope, id),
@@ -52,16 +53,16 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
       >
         <div className="event-labels">
           <Badge tone={eventTone[event.event_type]}>{eventTypes[event.event_type]}</Badge>
-          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
-          {event.match_details && (
-            <span className="muted">{homeAway[event.match_details.home_away]}</span>
+          {event.external_status && importedMatchStatus[event.external_status] && (
+            <Badge tone="amber">{importedMatchStatus[event.external_status]}</Badge>
           )}
+          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
         </div>
         <h1>{event.title}</h1>
         <div className="event-detail-meta">
           <span>
             <CalendarDays size={19} />
-            {dateLabel(event.starts_at)}
+            {eventDateLabel(event)}
             {event.ends_at && ` – ${dateLabel(event.ends_at, "HH:mm")}`}
           </span>
           {event.location && (
@@ -89,6 +90,21 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
           </div>
         )}
         {event.description && <p className="post-body">{event.description}</p>}
+        {imported && event.external_source_url && (
+          <p className="muted">
+            <a
+              className="inline-link"
+              href={event.external_source_url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              VolleyballLive
+            </a>
+            {event.last_synced_at && (
+              <small> · Sist oppdatert {dateLabel(event.last_synced_at)}</small>
+            )}
+          </p>
+        )}
         {event.event_type === "volunteer_work" && (
           <section className="assignments">
             <h2>Satt opp på dugnad</h2>
@@ -114,9 +130,9 @@ function EventView({ event }: { event: import("@/lib/domain").TeamEvent }) {
         {editable && (
           <div className="editor-footer">
             <Link className="button secondary" href={`/schedule/${id}/edit`}>
-              <Pencil size={15} /> Rediger hendelse
+              <Pencil size={15} /> {imported ? "Rediger tittel" : "Rediger hendelse"}
             </Link>
-            <DeleteButton action="delete-event" id={id} label="Slett hendelse" />
+            {!imported && <DeleteButton action="delete-event" id={id} label="Slett hendelse" />}
           </div>
         )}
       </article>

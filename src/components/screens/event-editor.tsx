@@ -6,7 +6,7 @@ import { useTeam } from "@/components/team-provider";
 import { QueryState, MissingRecord } from "@/components/query-state";
 import { Redirect } from "@/components/redirect";
 import { BackLink, PageHeading } from "@/components/ui";
-import { EventForm } from "@/components/event-form";
+import { EventForm, ImportedMatchTitleForm } from "@/components/event-form";
 import { canManageEvent, eventTypes, type TeamEvent, type EventType } from "@/lib/domain";
 export default function NewEvent() {
   return <EventEditor />;
@@ -35,16 +35,28 @@ function EventEditor({ event }: { event?: TeamEvent }) {
       <BackLink href={event ? `/schedule/${event.id}` : "/schedule"}>
         {event ? "Tilbake til hendelsen" : "Tilbake til terminlisten"}
       </BackLink>
-      <PageHeading title={event ? "Rediger hendelse" : "Ny hendelse"} />
-      <QueryState query={roster} title="Spillerne kunne ikke hentes">
-        {(players) => (
-          <EventForm
-            event={event}
-            allowed={event ? [event.event_type] : allowed}
-            players={players.filter((p) => p.base_role === "player")}
-          />
-        )}
-      </QueryState>
+      <PageHeading
+        title={
+          event?.external_source === "volleyballlive"
+            ? "Rediger tittel"
+            : event
+              ? "Rediger hendelse"
+              : "Ny hendelse"
+        }
+      />
+      {event?.external_source === "volleyballlive" ? (
+        <ImportedMatchTitleForm event={event} />
+      ) : (
+        <QueryState query={roster} title="Spillerne kunne ikke hentes">
+          {(players) => (
+            <EventForm
+              event={event}
+              allowed={event ? [event.event_type] : allowed}
+              players={players.filter((p) => p.base_role === "player")}
+            />
+          )}
+        </QueryState>
+      )}
     </div>
   );
 }

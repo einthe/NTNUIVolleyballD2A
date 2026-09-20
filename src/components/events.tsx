@@ -3,8 +3,8 @@ import type { CSSProperties } from "react";
 import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 import { eventTone, eventHighlight, eventTypes, type TeamEvent } from "@/lib/domain";
 import { dateLabel } from "@/lib/dates";
+import { importedMatchStatus } from "@/lib/event-dates";
 import { Badge } from "./ui";
-export const homeAway = { home: "Hjemmekamp", away: "Bortekamp", neutral: "Nøytral bane" };
 export function EventCard({ event, href }: { event: TeamEvent; href?: string }) {
   return (
     <Link
@@ -13,23 +13,25 @@ export function EventCard({ event, href }: { event: TeamEvent; href?: string }) 
       href={href ?? `/schedule/${event.id}`}
     >
       <div className="event-date">
-        <span>{dateLabel(event.starts_at, "MMM")}</span>
-        <strong>{dateLabel(event.starts_at, "dd")}</strong>
-        <small>{dateLabel(event.starts_at, "EEE")}</small>
+        <span>{event.starts_at ? dateLabel(event.starts_at, "MMM") : "Dato"}</span>
+        <strong>{event.starts_at ? dateLabel(event.starts_at, "dd") : "–"}</strong>
+        <small>{event.starts_at ? dateLabel(event.starts_at, "EEE") : "Uavklart"}</small>
       </div>
       <div className="event-card-content">
         <div className="event-labels">
           <Badge tone={eventTone[event.event_type]}>{eventTypes[event.event_type]}</Badge>
-          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
-          {event.match_details && (
-            <span className="muted">{homeAway[event.match_details.home_away]}</span>
+          {event.external_status && importedMatchStatus[event.external_status] && (
+            <Badge tone="amber">{importedMatchStatus[event.external_status]}</Badge>
           )}
+          {event.creator_base_role_snapshot === "coach" && <Badge tone="coach">Trener</Badge>}
         </div>
         <h2>{event.title}</h2>
         <div className="event-meta">
           <span>
             <CalendarDays size={14} />
-            {dateLabel(event.starts_at, "HH:mm")}
+            {event.starts_at && !event.external_time_unknown
+              ? dateLabel(event.starts_at, "HH:mm")
+              : "Tidspunkt ikke fastsatt"}
             {event.ends_at && `–${dateLabel(event.ends_at, "HH:mm")}`}
           </span>
           {event.location && (
@@ -58,17 +60,23 @@ export function SmallEvent({ event }: { event: TeamEvent }) {
       style={{ "--role-color": `var(--${eventHighlight(event)})` } as CSSProperties}
     >
       <div className="small-event-date">
-        <strong>{dateLabel(event.starts_at, "dd")}</strong>
-        <span>{dateLabel(event.starts_at, "MMM")}</span>
+        <strong>{event.starts_at ? dateLabel(event.starts_at, "dd") : "–"}</strong>
+        <span>{event.starts_at ? dateLabel(event.starts_at, "MMM") : "Dato"}</span>
       </div>
       <div>
         <span className={`event-type-text tone-${eventTone[event.event_type]}`}>
           {eventTypes[event.event_type]}
           {event.creator_base_role_snapshot === "coach" && " · Trener"}
+          {event.external_status &&
+            importedMatchStatus[event.external_status] &&
+            ` · ${importedMatchStatus[event.external_status]}`}
         </span>
         <strong>{event.title}</strong>
         <small>
-          {dateLabel(event.starts_at, "EEE HH:mm")} {event.location && `· ${event.location}`}
+          {event.starts_at && !event.external_time_unknown
+            ? dateLabel(event.starts_at, "EEE HH:mm")
+            : "Tidspunkt ikke fastsatt"}{" "}
+          {event.location && `· ${event.location}`}
         </small>
       </div>
     </Link>

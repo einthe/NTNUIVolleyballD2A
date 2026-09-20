@@ -7,7 +7,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Email/password registration, email confirmation callback, password recovery, and pending/approved/rejected/disabled accounts.
 - Admin approval, rejection, deactivation/reactivation, player/coach roles, jersey numbers, secondary roles, and player positions. Admin promotion is **only** a direct database operation.
 - Paginated posts, historical author/role snapshots, own-post editing, admin moderation, and optional private images with descriptions.
-- Upcoming and archived events, category permissions, match opponents/home-away/results, and structured volunteer assignments. No local attendance/RSVP system.
+- Upcoming and archived events, category permissions, match opponents/results, and structured volunteer assignments. No local attendance/RSVP system.
 - A roster without email addresses or admin accounts; coach/admin position editing.
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.
 - In-app notifications, per-user read state, and 13 admin-controlled triggers, all disabled initially.
@@ -210,6 +210,12 @@ The GitHub Actions workflow runs code checks, builds, the isolated browser suite
 - Validated public competition data uses Next's shared Data Cache with 24-hour revalidation. A stale request returns the previous result and refreshes in the background; failed refreshes retain that result. The open page polls the private app API every 24 hours while visible. This is demand-driven, not a scheduled job; changes can take an additional polling interval to appear. “Sist hentet” shows the last successful source fetch. Empty cache plus source outage shows the normal retry state.
 - Tokens stay in server memory, expire early, and are renewed once on API 401. Browser responses remain `private, no-store`; users never receive source credentials or tokens. The demo uses the same public standings source (real league data, unlike its fictional roster/events).
 
+## VolleyballLive matches
+
+NTNUI 2's fixtures are imported as normal matches in Terminliste, with daily updates and preserved lineup IDs. Matches and standings display NTNUI 2/3/4 as **NTNUI D2A/D2B/D2C**. Opponent names match standings, titles default to NTNUI D2A first, and coaches/admins can save a title that survives future imports. All matches are neutral, without home/away labels. The verified tournament currently contains 16 matches for our team (source team ID `913845`).
+
+Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/migrations/202609200004_match_display.sql`, set server-only `SUPABASE_SECRET_KEY` and `CRON_SECRET`, and redeploy. The Vercel cron runs daily at 05:00 UTC; schedule reads also import when due. Set `VOLLEYBALL_TEAM_ID` to change the selected team. The fictional demo remains isolated; `VOLLEYBALL_MATCH_SYNC_ENABLED=1 npm run dev` enables live imports into its disposable local database. See [setup, field mapping and update behavior](docs/volleyball-matches.md).
+
 ## Architecture and security
 
 - The authenticated layout protects entry; client reads use a scoped, in-memory TanStack Query cache backed by cookie-authenticated `/api/team/[resource]` handlers. Every read checks current authentication, status and permissions, and returns `private, no-store`. Auth transitions clear private caches across tabs. `proxy.ts` verifies/refreshes sessions; Server Actions independently authorize writes. See [the cache contract](docs/read-cache.md).
@@ -237,7 +243,7 @@ The GitHub Actions workflow runs code checks, builds, the isolated browser suite
 - The notification dropdown displays up to 50 rows, prioritizing unread notifications. Past records remain in the database.
 - The default upload limit is 3 MB to fit [Vercel's 4.5 MB request limit](https://vercel.com/docs/functions/limitations), including multipart overhead. The bucket allows 10 MB for future direct-to-storage uploads. Raise the app limit only on hosting that supports larger request bodies.
 - Failed media attachment leaves the successfully saved text post in place and explains how to retry. Cleanup attempts remove unattached objects; an interrupted network request can leave an orphan object for later administrative cleanup.
-- Spond integration is not implemented without an API contract. External event IDs/source/sync timestamps are reserved in the schema and are not writable through normal event forms. A future import service should be a separate server adapter.
+- Spond integration is not implemented without an API contract. VolleyballLive uses the external event IDs/source/sync timestamps; these fields are not writable through normal event forms. A future Spond import should use a separate server adapter.
 
 ## Deploy to Vercel and the target domain
 

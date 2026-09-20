@@ -62,7 +62,7 @@ export function EventForm({
             name="starts_at"
             type="datetime-local"
             required
-            defaultValue={event && localInput(event.starts_at)}
+            defaultValue={event?.starts_at ? localInput(event.starts_at) : undefined}
           />
         </label>
         <label>
@@ -96,14 +96,6 @@ export function EventForm({
                 required
                 defaultValue={event?.match_details?.opponent}
               />
-            </label>
-            <label>
-              Hjemme / borte
-              <select name="home_away" defaultValue={event?.match_details?.home_away ?? "home"}>
-                <option value="home">Hjemmekamp</option>
-                <option value="away">Bortekamp</option>
-                <option value="neutral">Nøytral bane</option>
-              </select>
             </label>
           </div>
           <div className="form-grid">
@@ -170,6 +162,30 @@ export function EventForm({
           Avbryt
         </Link>
         <Submit>{event ? "Lagre endringer" : "Opprett hendelse"}</Submit>
+      </div>
+    </ActionForm>
+  );
+}
+
+export function ImportedMatchTitleForm({ event: initialEvent }: { event: TeamEvent }) {
+  const [event] = useState(initialEvent);
+  return (
+    <ActionForm className="card editor form-stack">
+      <input type="hidden" name="action" value="match-title" />
+      <input type="hidden" name="id" value={event.id} />
+      <input type="hidden" name="expected_updated_at" value={event.updated_at} />
+      <label>
+        Tittel
+        <input name="title" required maxLength={160} defaultValue={event.title} />
+      </label>
+      <p className="field-hint">
+        Tittelen beholdes når kampinformasjonen oppdateres fra VolleyballLive.
+      </p>
+      <div className="editor-footer">
+        <Link className="button secondary" href={`/schedule/${event.id}`}>
+          Avbryt
+        </Link>
+        <Submit>Lagre endringer</Submit>
       </div>
     </ActionForm>
   );
