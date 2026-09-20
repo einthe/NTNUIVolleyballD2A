@@ -92,13 +92,25 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
   await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Stall", exact: true })
+    .getByRole("link", { name: "Tropp", exact: true })
     .click();
-  await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
   expect(reads["/api/team/roster"] ?? 0).toBe(0);
   await page.getByLabel("Søk etter spiller").fill("Starter");
-  await page.getByRole("button", { name: "Søk", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Søk", exact: true })).toHaveCount(0);
+  await page.getByLabel("Søk etter spiller").press("Enter");
   await expect(page).toHaveURL(/\/roster\?q=Starter/);
+  await page.getByLabel("Filtrer på posisjon").selectOption("outside_hitter");
+  await expect(page).toHaveURL(/q=Starter&position=outside_hitter/);
+  await page.getByLabel("Filtrer på posisjon").selectOption("");
+  await expect(page).toHaveURL(/q=Starter&position=$/);
+  await page.goBack();
+  await expect(page.getByLabel("Filtrer på posisjon")).toHaveValue("outside_hitter");
+  await page.getByRole("link", { name: "Nullstill", exact: true }).click();
+  await expect(page).toHaveURL(/\/roster$/);
+  await expect(page.getByLabel("Søk etter spiller")).toHaveValue("");
+  await expect(page.getByLabel("Filtrer på posisjon")).toHaveValue("");
+  expect(reads["/api/team/roster"] ?? 0).toBe(0);
   await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
@@ -194,7 +206,7 @@ test("private reads enforce scope, permissions, sign-out and account changes", a
   await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Stall", exact: true })
+    .getByRole("link", { name: "Tropp", exact: true })
     .click();
   await expect(page).toHaveURL(/\/auth\/rejected$/);
   await expect(page.locator(".player-card")).toHaveCount(0);

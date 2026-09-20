@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Player, Post, TeamEvent, Lineup, Notification } from "@/lib/domain";
 import type { Access, AdminUsers, NotificationRule, PostList, Change } from "./contract";
+import type { Standings } from "@/lib/standings";
 
 export class AccessChanged extends Error {
   constructor(public destination: string) {
@@ -12,6 +13,7 @@ export const cacheTimes = {
   posts: 30_000,
   events: 60_000,
   roster: 300_000,
+  standings: 24 * 60 * 60_000,
   lineups: 30_000,
   notifications: 15_000,
   admin: 15_000,
@@ -25,6 +27,7 @@ export const keys = {
   events: (scope: string) => ["team", scope, "events"] as const,
   event: (scope: string, id: string) => ["team", scope, "event", id] as const,
   roster: (scope: string) => ["team", scope, "roster"] as const,
+  standings: (scope: string) => ["team", scope, "standings"] as const,
   lineups: (scope: string) => ["team", scope, "lineups"] as const,
   notifications: (scope: string) => ["team", scope, "notifications"] as const,
   users: (scope: string) => ["team", scope, "users"] as const,
@@ -49,6 +52,13 @@ async function read<T>(
   return result.data as T;
 }
 export const queries = {
+  standings: (scope: string) =>
+    queryOptions({
+      queryKey: keys.standings(scope),
+      queryFn: ({ signal }) => read<Standings>(scope, "standings", signal),
+      staleTime: cacheTimes.standings,
+      refetchInterval: cacheTimes.standings,
+    }),
   session: (scope: string) =>
     queryOptions({
       queryKey: keys.session(scope),

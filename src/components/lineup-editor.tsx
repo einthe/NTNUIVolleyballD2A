@@ -84,7 +84,7 @@ export function LineupEditor({
           <h2>Sett startsekseren</h2>
           <p className="muted">
             Velg spillere etter rolle. Leggerens startposisjon bestemmer rotasjonen. Valgene følger
-            primær- og sekundærposisjonene i Stall.
+            primær- og sekundærposisjonene i Tropp.
           </p>
         </div>
         {initial.needsReview && (

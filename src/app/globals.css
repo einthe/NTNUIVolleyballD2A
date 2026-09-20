@@ -202,6 +202,42 @@ small {
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+.standings-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.standings-table th,
+.standings-table td {
+  padding: 16px 14px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+.standings-table thead th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.standings-table th:nth-child(2),
+.standings-table th[scope="row"] {
+  text-align: left;
+  min-width: 180px;
+}
+.standings-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.standings-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
 .brand {
   display: flex;
   gap: 11px;

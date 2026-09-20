@@ -15,6 +15,8 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { accessScope } from "@/lib/cache/contract";
 import { eventTypes, uuid } from "@/lib/domain";
+import { getStandings } from "@/server/standings";
+import { StandingsError } from "@/server/standings/config";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) =>
@@ -50,6 +52,9 @@ export async function GET(
         .parse(search.get("page") ?? 1);
     let data: unknown;
     switch (resource) {
+      case "standings":
+        data = await getStandings();
+        break;
       case "session":
         data = {
           profile,
@@ -121,6 +126,7 @@ export async function GET(
     }
     return json({ data });
   } catch (error) {
+    if (error instanceof StandingsError) return json({ error: error.message }, 503);
     if (error instanceof z.ZodError) return json({ error: "Ugyldig forespørsel." }, 400);
     return json({ error: "Kunne ikke hente innholdet. Prøv igjen." }, 500);
   }

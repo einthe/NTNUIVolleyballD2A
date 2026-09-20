@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
+  ListOrdered,
   LayoutDashboard,
   Users,
   ShieldCheck,
@@ -26,7 +27,8 @@ import { Avatar, Brand } from "./ui";
 const links = [
   { href: "/feed", label: "Innlegg", icon: LayoutDashboard },
   { href: "/schedule", label: "Terminliste", icon: CalendarDays },
-  { href: "/roster", label: "Stall", icon: Users },
+  { href: "/standings", label: "Tabell", icon: ListOrdered },
+  { href: "/roster", label: "Tropp", icon: Users },
 ];
 const shortcuts = [
   { type: "match", label: "Kamper", icon: Volleyball },
@@ -124,13 +126,15 @@ export function Shell({ children }: { children: ReactNode }) {
             Lagrommet <span>/</span>{" "}
             {pathname.startsWith("/schedule")
               ? "Terminliste"
-              : pathname.startsWith("/roster")
-                ? "Stall"
-                : pathname.startsWith("/admin")
-                  ? "Administrasjon"
-                  : pathname === "/profile"
-                    ? "Min profil"
-                    : "Innlegg"}
+              : pathname.startsWith("/standings")
+                ? "Tabell"
+                : pathname.startsWith("/roster")
+                  ? "Tropp"
+                  : pathname.startsWith("/admin")
+                    ? "Administrasjon"
+                    : pathname === "/profile"
+                      ? "Min profil"
+                      : "Innlegg"}
           </span>
           <div className="topbar-controls">
             <details className="notification-menu">

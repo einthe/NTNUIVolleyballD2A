@@ -41,8 +41,8 @@ test("mobile drawer preserves desktop navigation and supports focus, dismissal a
   await page.mouse.click(viewport.width - 8, viewport.height / 2);
   await expect(drawer).toBeHidden();
   await toggle.click();
-  await drawer.getByRole("link", { name: "Stall", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
+  await drawer.getByRole("link", { name: "Tropp", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
   await expect(drawer).toBeHidden();
   await toggle.click();
   await drawer.getByRole("link", { name: "Kamper", exact: true }).click();

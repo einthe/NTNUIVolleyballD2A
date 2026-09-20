@@ -87,7 +87,7 @@ test("square courts, side libero and setup controls keep their spatial layout", 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("responsibility colors remain readable in every palette and roster is named Stall", async ({
+test("responsibility colors remain readable in every palette and roster is named Tropp", async ({
   page,
 }, info) => {
   await coach(page);
@@ -112,10 +112,10 @@ test("responsibility colors remain readable in every palette and roster is named
   await openNavigation(page);
   await page
     .getByRole("navigation", { name: "Hovedmeny" })
-    .getByRole("link", { name: "Stall", exact: true })
+    .getByRole("link", { name: "Tropp", exact: true })
     .click();
-  await expect(page.getByRole("heading", { name: "Stall.", exact: true })).toBeVisible();
-  await expect(page).toHaveTitle(/Stall/);
+  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
+  await expect(page).toHaveTitle(/Tropp/);
   await page.goto("/schedule");
   const training = page.locator(".event-card").filter({ hasText: "Trening: mottak og forsvar" });
   await expect(training.getByText("Trener", { exact: true })).toBeVisible();

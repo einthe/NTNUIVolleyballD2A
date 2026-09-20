@@ -4,6 +4,7 @@ test("private pages redirect anonymous visitors and do not reveal team data", as
   for (const route of [
     "/feed",
     "/schedule",
+    "/standings",
     "/roster",
     "/admin/users",
     "/admin/notifications",

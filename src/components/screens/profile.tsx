@@ -19,7 +19,7 @@ export default function Profile() {
           <input type="hidden" name="action" value="profile-photo" />
           <input type="hidden" name="expected_path" value={path} />
           <ImageUpload maxMB={3} label="Profilbilde" required />
-          <p className="field-hint">Bildet beskjæres til et kvadrat og vises i innlegg og Stall.</p>
+          <p className="field-hint">Bildet beskjæres til et kvadrat og vises i innlegg og Tropp.</p>
           <Submit>{path ? "Bytt profilbilde" : "Last opp profilbilde"}</Submit>
         </ActionForm>
         {path && (

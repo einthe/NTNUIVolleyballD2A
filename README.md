@@ -31,11 +31,11 @@ Apply `supabase/migrations/202609200001_lineup_roles_and_event_authors.sql` befo
 
 Lineups now store Legger, K1, M1, Dia, K2, M2 and optional Libero, plus the setter's starting position. Both primary and secondary player positions qualify for selection; SQL also checks eligibility, duplicate players/roles and rotation. Empty/incomplete drafts retain their setter position. Historical revisions stay unchanged. The editor infers compatible selections from older lineups and asks for review when an old selection no longer fits.
 
-Events use the same responsibility colors as posts; coach-authored content has a coral highlight. New events preserve the creator's role when edited. Existing events are backfilled using their creator's current role because no earlier author-role snapshot exists. Stall displays all positions with the primary first, e.g. `Kant / Dia`.
+Events use the same responsibility colors as posts; coach-authored content has a coral highlight. New events preserve the creator's role when edited. Existing events are backfilled using their creator's current role because no earlier author-role snapshot exists. Tropp displays all positions with the primary first, e.g. `Kant / Dia`.
 
 ## Profile pictures and shortcuts
 
-Users can upload, replace or remove their own profile picture from **Min profil** in the account menu. Pictures are private to approved members, cropped to a square, and shown in the account menu, Stall and post headers. JPEG, PNG and WebP uploads are limited to 3 MB. Apply `supabase/migrations/202609200002_profile_photos.sql` before deploying this feature (`supabase db push`); restarting the local demo applies it automatically with fresh fictional data.
+Users can upload, replace or remove their own profile picture from **Min profil** in the account menu. Pictures are private to approved members, cropped to a square, and shown in the account menu, Tropp and post headers. JPEG, PNG and WebP uploads are limited to 3 MB. Apply `supabase/migrations/202609200002_profile_photos.sql` before deploying this feature (`supabase db push`); restarting the local demo applies it automatically with fresh fictional data.
 
 The **Snarveier** navigation links open upcoming matches, volunteer events and social events in Terminliste. On mobile, the top-left menu button opens the sidebar over a dimmed backdrop. It closes when selecting a link, tapping the backdrop or close button, or pressing Escape; keyboard focus stays within the open menu.
 
@@ -200,6 +200,15 @@ E2E_BASE_URL=<optional already-running app origin>
 Without the first two variables, `test:e2e` skips authenticated integration tests. Set `E2E_REQUIRE_BACKEND=1` to fail instead of skipping; CI and `test:e2e:local` enforce this. Hosted tests generate unique synthetic accounts and leave test data for inspection. Reset only the disposable test database afterward. **Never point these tests at the production project.** The privileged key is used exclusively by the Node test process to arrange fixtures and is never imported by app code.
 
 The GitHub Actions workflow runs code checks, builds, the isolated browser suite, and a separate full Supabase integration job with local Docker services.
+
+## League standings (Tabell)
+
+`/standings` appears after Terminliste in both menus and uses the existing approved-account checks. No database migration or credentials are needed for the default source. See [standings integration](docs/standings.md) for the verified endpoints, field mapping and limitations.
+
+- Server-only `VOLLEYBALL_SEASON_ID` and `VOLLEYBALL_TOURNAMENT_ID` select the competition (defaults: `201070` / `449623`). Change both together and restart/redeploy.
+- Without NIF credentials, the server reads the public JSON service used by VolleyballLive. With **both** `NIF_CLIENT_ID` and `NIF_CLIENT_SECRET`, it prefers the official NIF API using OAuth client credentials; `NIF_SCOPE` defaults to `data_ta_read`. Request credentials/access from [NIF Digital](https://idrettsforbundet.atlassian.net/wiki/spaces/DDTII/pages/335577089). Partial credentials are an error, not a silent fallback. Never prefix these variables with `NEXT_PUBLIC_`.
+- Validated public competition data uses Next's shared Data Cache with 24-hour revalidation. A stale request returns the previous result and refreshes in the background; failed refreshes retain that result. The open page polls the private app API every 24 hours while visible. This is demand-driven, not a scheduled job; changes can take an additional polling interval to appear. “Sist hentet” shows the last successful source fetch. Empty cache plus source outage shows the normal retry state.
+- Tokens stay in server memory, expire early, and are renewed once on API 401. Browser responses remain `private, no-store`; users never receive source credentials or tokens. The demo uses the same public standings source (real league data, unlike its fictional roster/events).
 
 ## Architecture and security
 

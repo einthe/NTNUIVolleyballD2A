@@ -15,7 +15,7 @@ export default function Roster() {
   const { profile, scope } = useTeam();
   const query = useQuery(queries.roster(scope));
   return (
-    <QueryState query={query} title="Stalloversikten kunne ikke hentes">
+    <QueryState query={query} title="Troppsoversikten kunne ikke hentes">
       {(roster) => <RosterView roster={roster} profile={profile} params={params} />}
     </QueryState>
   );
@@ -39,29 +39,35 @@ function RosterView({
   );
   return (
     <>
-      <PageHeading title="Stall">
+      <PageHeading title="Tropp">
         <span className="member-count">
           <Users size={17} /> {allPlayers.length} spillere · {coaches.length} trenere
         </span>
       </PageHeading>
-      <Form action="/roster" className="roster-toolbar">
+      <Form action="/roster" className="roster-toolbar" scroll={false}>
         <div className="search-field">
           <Search size={18} />
           <label className="sr-only" htmlFor="roster-search">
             Søk etter spiller
           </label>
           <input
+            key={params.q ?? ""}
             id="roster-search"
             name="q"
-            placeholder="Søk i stallen …"
-            defaultValue={params.q}
+            placeholder="Søk i troppen …"
+            defaultValue={params.q ?? ""}
             maxLength={100}
           />
         </div>
         <label className="sr-only" htmlFor="position-filter">
           Filtrer på posisjon
         </label>
-        <select id="position-filter" name="position" defaultValue={params.position ?? ""}>
+        <select
+          id="position-filter"
+          name="position"
+          value={params.position ?? ""}
+          onChange={(event) => event.currentTarget.form?.requestSubmit()}
+        >
           <option value="">Alle posisjoner</option>
           {Object.entries(positions).map(([key, label]) => (
             <option key={key} value={key}>
@@ -69,7 +75,6 @@ function RosterView({
             </option>
           ))}
         </select>
-        <button className="button secondary">Søk</button>
         {(params.q || params.position) && (
           <Link className="text-button" href="/roster">
             Nullstill
