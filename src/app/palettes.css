@@ -1,3 +1,15 @@
+:root[data-palette="club"] {
+  --bg: #080808;
+  --panel: #111111;
+  --panel-raised: #1b1b1b;
+  --sidebar: #050505;
+  --border: #00843d;
+  --text: #f5f5f0;
+  --muted: #b9bdb9;
+  --accent: #fedb00;
+  --accent-dark: #142019;
+  --club-red: #ee4545;
+}
 :root[data-palette="petrol"] {
   --bg: #0c191e;
   --panel: #14262d;
@@ -31,7 +43,48 @@
   --accent: #ddafe4;
   --accent-dark: #442d4b;
 }
-:root:is([data-palette="petrol"], [data-palette="midnight"], [data-palette="plum"]) {
+:root[data-palette="amber"] {
+  --bg: #21180f;
+  --panel: #302418;
+  --panel-raised: #423221;
+  --sidebar: #281d13;
+  --border: #695039;
+  --text: #faf1e3;
+  --muted: #cdbba2;
+  --accent: #f4c36c;
+  --accent-dark: #4b3418;
+}
+:root[data-palette="burgundy"] {
+  --bg: #201115;
+  --panel: #321c23;
+  --panel-raised: #452630;
+  --sidebar: #29161d;
+  --border: #70404e;
+  --text: #fbecf0;
+  --muted: #d1afb9;
+  --accent: #f4a0ad;
+  --accent-dark: #54232f;
+}
+:root[data-palette="graphite"] {
+  --bg: #151617;
+  --panel: #222426;
+  --panel-raised: #303337;
+  --sidebar: #1b1d1f;
+  --border: #50555c;
+  --text: #f2f3f5;
+  --muted: #b6bdc7;
+  --accent: #d7dce2;
+  --accent-dark: #363d47;
+}
+:root:is(
+  [data-palette="club"],
+  [data-palette="petrol"],
+  [data-palette="midnight"],
+  [data-palette="plum"],
+  [data-palette="amber"],
+  [data-palette="burgundy"],
+  [data-palette="graphite"]
+) {
   --theme-ink: var(--bg);
   --theme-hover: color-mix(in srgb, var(--accent), white 18%);
   --theme-surface: var(--panel);
@@ -49,6 +102,33 @@
   --theme-court-end: var(--panel);
   --theme-glow: color-mix(in srgb, var(--accent-dark) 70%, transparent);
   --theme-story: color-mix(in srgb, var(--bg), var(--accent-dark) 40%);
+}
+:root[data-palette="club"] {
+  --theme-faint: color-mix(in srgb, var(--border) 12%, transparent);
+  --theme-soft-border: color-mix(in srgb, var(--border) 65%, transparent);
+  --theme-art: var(--border);
+  --theme-art-solid: var(--border);
+  --theme-court: var(--panel-raised);
+  --theme-glow: color-mix(in srgb, var(--border) 10%, transparent);
+  --theme-story: var(--panel);
+}
+:root[data-palette="club"] .nav-link.active {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+:root[data-palette="club"] .brand-dot {
+  color: var(--club-red);
+}
+:root[data-palette="club"] .nav-dot {
+  background: var(--club-red);
+}
+:root[data-palette="club"] .topbar {
+  border-image: linear-gradient(
+      to right,
+      var(--border) 0% 70%,
+      var(--accent) 70% 92%,
+      var(--club-red) 92% 100%
+    )
+    1;
 }
 .palette-selector {
   display: grid;

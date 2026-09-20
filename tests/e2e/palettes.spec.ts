@@ -12,6 +12,9 @@ test("palettes apply immediately, remain accessible and persist through reloads"
   await page.goto("/auth/sign-in");
   const selector = page.getByRole("combobox", { name: "Fargepalett" });
   await expect(selector).toHaveValue("ntnui");
+  await expect(selector.locator("option:checked")).toHaveText("Skog");
+  await expect(selector.locator('option[value="petrol"]')).toHaveText("Petroleum");
+  await expect(selector.locator('option[value="club"]')).toHaveText("NTNUI");
   for (const [palette, values] of Object.entries(palettes)) {
     await selector.selectOption(palette);
     await expect(page.locator("html")).toHaveAttribute("data-palette", palette);
@@ -89,13 +92,18 @@ test("account palette changes preserve private navigation and synchronize betwee
     path: `test-results/petrol-roster-${testInfo.project.name}.png`,
     fullPage: true,
   });
-  for (const palette of ["midnight", "plum"]) {
+  for (const palette of ["club", "amber", "burgundy", "graphite", "midnight", "plum"]) {
     await page.locator(".account-summary").click();
     await selector.selectOption(palette);
     await page.locator(".account-summary").click();
     expect(
       (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
     ).toEqual([]);
+    if (palette === "club")
+      await page.screenshot({
+        path: `test-results/ntnui-roster-${testInfo.project.name}.png`,
+        fullPage: true,
+      });
   }
   await page.locator(".account-summary").click();
   await page.getByRole("button", { name: "Logg ut", exact: true }).click();

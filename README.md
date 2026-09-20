@@ -13,7 +13,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.
 - In-app notifications, per-user read state, and 13 admin-controlled triggers, all disabled initially.
 - In-memory read caching with background refresh and list-to-detail reuse; see [cache design and verification](docs/read-cache.md).
-- Four color palettes: NTNUI, Petrol, Nattblå and Plomme. Choose **Fargepalett** in the account menu or on an authentication page. The choice is saved in this browser and synchronized between tabs; no account data is stored with it.
+- Eight color palettes: NTNUI (black surfaces with green outlines, yellow accents and red details), Skog (formerly NTNUI), Petroleum (formerly Petrol), Nattblå, Plomme, Rav, Burgunder and Grafitt. Existing saved choices retain their colors. Choose **Fargepalett** in the account menu or on an authentication page. The choice is saved in this browser and synchronized between tabs; no account data is stored with it.
 - Database-enforced authorization, stale-edit checks, private image delivery, automated PostgreSQL/RLS tests, browser tests, and CI.
 
 The deployed application requires Supabase configuration and never exposes demo accounts. Local demo tooling runs separately from the application; authentication, permissions and RLS still apply.
@@ -232,7 +232,7 @@ Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/mi
 
 ## Deliberate V1 choices
 
-- NTNUI is the default green/lime palette. Alternate theme tokens live in `src/app/palettes.css`, with palette names in `src/lib/palettes.ts`; role/event labels and colors are centralized in `src/lib/domain.ts`. Only the palette preference is persisted to localStorage; private query data is not.
+- Skog is the default green/lime palette. Alternate theme tokens live in `src/app/palettes.css`, with palette names in `src/lib/palettes.ts`; role/event labels and colors are centralized in `src/lib/domain.ts`. Only the palette preference is persisted to localStorage; private query data is not.
 - Local fonts are bundled with the app. No third-party font requests or external image services are required.
 - `schedule_events.location` is the canonical venue; there is no redundant match venue field.
 - Event category is immutable after creation. Delete/recreate an incorrectly categorized event if it has no lineup history.

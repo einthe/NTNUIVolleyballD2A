@@ -1,8 +1,13 @@
 export const palettes = {
-  ntnui: { label: "NTNUI", background: "#101411", accent: "#c7df89" },
-  petrol: { label: "Petrol", background: "#0c191e", accent: "#8ad9d4" },
+  club: { label: "NTNUI", background: "#080808", accent: "#fedb00" },
+  // Retain the original IDs so saved Skog/Petroleum preferences keep their colors.
+  ntnui: { label: "Skog", background: "#101411", accent: "#c7df89" },
+  petrol: { label: "Petroleum", background: "#0c191e", accent: "#8ad9d4" },
   midnight: { label: "Nattblå", background: "#111624", accent: "#aac6ff" },
   plum: { label: "Plomme", background: "#1c1420", accent: "#ddafe4" },
+  amber: { label: "Rav", background: "#21180f", accent: "#f4c36c" },
+  burgundy: { label: "Burgunder", background: "#201115", accent: "#f4a0ad" },
+  graphite: { label: "Grafitt", background: "#151617", accent: "#d7dce2" },
 } as const;
 export type Palette = keyof typeof palettes;
 export const paletteStorageKey = "ntnui-palette";
