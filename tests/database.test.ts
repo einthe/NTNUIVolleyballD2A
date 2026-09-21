@@ -99,6 +99,71 @@ afterAll(async () => {
   await db.close();
 });
 
+describe("team image settings", () => {
+  const settings = () => sql("select responsive_images,version from public.image_settings");
+  it("defaults on and only approved members can read it", async () => {
+    expect((await asUser(player, settings)).rows).toEqual([
+      { responsive_images: true, version: 0 },
+    ]);
+    expect((await asUser(pending, settings)).rows).toEqual([]);
+    await expect(asUser(null, settings)).rejects.toThrow();
+  });
+  it("restricts writes to approved admins and rejects stale/invalid writes", async () => {
+    for (const user of [null, coach, player, pending, disabled])
+      await expect(
+        asUser(user, () =>
+          rpc("set_image_settings", {
+            responsive_images: false,
+            expected_version: 0,
+          }),
+        ),
+      ).rejects.toThrow();
+    await expect(
+      asUser(admin, () => sql("update public.image_settings set responsive_images=false")),
+    ).rejects.toThrow();
+    await expect(
+      asUser(admin, () =>
+        rpc("set_image_settings", {
+          responsive_images: "false",
+          expected_version: 0,
+        }),
+      ),
+    ).rejects.toThrow("invalid_setting");
+    await asUser(admin, () =>
+      rpc("set_image_settings", { responsive_images: false, expected_version: 0 }),
+    );
+    expect((await asUser(player, settings)).rows).toEqual([
+      { responsive_images: false, version: 1 },
+    ]);
+    await expect(
+      asUser(admin, () =>
+        rpc("set_image_settings", {
+          responsive_images: true,
+          expected_version: 0,
+        }),
+      ),
+    ).rejects.toThrow("stale_record");
+    await asUser(admin, () =>
+      rpc("set_image_settings", { responsive_images: true, expected_version: 1 }),
+    );
+  });
+  it("rejects writes from a disabled administrator", async () => {
+    await sql("update public.profiles set account_status='disabled' where id=$1", [admin]);
+    try {
+      await expect(
+        asUser(admin, () =>
+          rpc("set_image_settings", {
+            responsive_images: false,
+            expected_version: 2,
+          }),
+        ),
+      ).rejects.toThrow("not_authorized");
+    } finally {
+      await sql("update public.profiles set account_status='approved' where id=$1", [admin]);
+    }
+  });
+});
+
 describe("private profile pictures", () => {
   it("limits writes to the current user, preserves the current file, and rejects stale changes", async () => {
     const author = id(30),

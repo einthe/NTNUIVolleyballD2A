@@ -32,6 +32,7 @@ export function PostCard({
   detail?: boolean;
   lineup?: import("@/lib/domain").Lineup | null;
 }) {
+  const responsiveImages = useContext(TeamContext)?.responsiveImages !== false;
   const revision = lineup?.lineup_revisions.find((r) => r.is_current_published);
   const editable =
     profile.base_role === "admin" ||
@@ -108,15 +109,22 @@ export function PostCard({
           <div className="post-image-wrap" key={media.id}>
             {/* Private authenticated endpoint; bypass public image optimization caches. */}
             <img
+              key={responsiveImages ? "responsive" : "full"}
               className="post-image"
-              src={`/media/${media.id}`}
-              srcSet={imageWidths.post
-                .map((width) => `/media/${media.id}?w=${width} ${width}w`)
-                .join(", ")}
+              src={`/media/${media.id}${responsiveImages ? "" : "?w=2400"}`}
+              srcSet={
+                responsiveImages
+                  ? imageWidths.post
+                      .map((width) => `/media/${media.id}?w=${width} ${width}w`)
+                      .join(", ")
+                  : undefined
+              }
               sizes={
-                detail
-                  ? "(max-width: 760px) calc(100vw - 82px), (max-width: 1190px) min(742px, calc(100vw - 304px)), min(742px, calc(100vw - 356px))"
-                  : "(max-width: 760px) calc(100vw - 82px), (max-width: 980px) calc(100vw - 304px), (max-width: 1190px) calc(100vw - 569px), (max-width: 1499px) calc(100vw - 668px), min(974px, calc(100vw - 700px))"
+                !responsiveImages
+                  ? undefined
+                  : detail
+                    ? "(max-width: 760px) calc(100vw - 82px), (max-width: 1190px) min(742px, calc(100vw - 304px)), min(742px, calc(100vw - 356px))"
+                    : "(max-width: 760px) calc(100vw - 82px), (max-width: 980px) calc(100vw - 304px), (max-width: 1190px) calc(100vw - 569px), (max-width: 1499px) calc(100vw - 668px), min(974px, calc(100vw - 700px))"
               }
               decoding="async"
               alt={media.alt_text || `Bilde til innlegget ${post.title}`}

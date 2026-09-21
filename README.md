@@ -7,6 +7,8 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Email/password registration, email confirmation callback, password recovery, and pending/approved/rejected/disabled accounts.
 - Admin approval, rejection, deactivation/reactivation, player/coach roles, jersey numbers, secondary roles, and player positions. Admin promotion is **only** a direct database operation.
 - Paginated posts, historical author/role snapshots, own-post editing, admin moderation, and optional private images with descriptions.
+- **Bøter**: ranked totals and expandable histories for players/coaches, a fine-type catalog for everyone with editing for **Botsjef** and admins. Includes exact NOK amounts, historical prices and annulment. See [fine system setup and demo](docs/fines.md) for the required migrations.
+- Team-wide automatic image sizing can be toggled under **Administrasjon → Bildeinnstillinger**. Apply `supabase/migrations/202609210001_image_settings.sql` before using the toggle in production; the demo applies it on restart. Private caching and access checks remain enabled in both modes.
 - Threaded comments and GIPHY meme reactions on post/event details, with author editing and admin moderation. See [discussion setup](docs/discussions.md) for the required migration and API key.
 - Upcoming and archived events, category permissions, match opponents/results, and structured volunteer assignments. No local attendance/RSVP system.
 - A roster without email addresses or admin accounts; coach/admin position editing.
@@ -60,6 +62,7 @@ Open **http://127.0.0.1:3000**. No Docker, Supabase project or `.env.local` is n
 | `admin@demo.test`    | Administration, approvals, notifications and all content           |
 | `coach@demo.test`    | Matches, practices, player positions and lineup drafts/publication |
 | `player@demo.test`   | Regular player and captain; posts and read access                  |
+| `theo@demo.test`     | Botsjef; fine types and fines for players/coaches            |
 | `pending@demo.test`  | Pending approval screen                                            |
 | `disabled@demo.test` | Disabled account screen                                            |
 

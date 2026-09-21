@@ -1,8 +1,16 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Player, Post, TeamEvent, Lineup, Notification } from "@/lib/domain";
-import type { Access, AdminUsers, NotificationRule, PostList, Change } from "./contract";
+import type {
+  Access,
+  AdminUsers,
+  NotificationRule,
+  PostList,
+  Change,
+  ImageSettings,
+} from "./contract";
 import type { VolunteerWorkPoints } from "@/lib/volunteer-work-points";
 import type { Standings } from "@/lib/standings";
+import type { Fines } from "@/lib/fines";
 
 export class AccessChanged extends Error {
   constructor(public destination: string) {
@@ -30,11 +38,13 @@ export const keys = {
   event: (scope: string, id: string) => ["team", scope, "event", id] as const,
   roster: (scope: string) => ["team", scope, "roster"] as const,
   volunteerWorkPoints: (scope: string) => ["team", scope, "volunteer_work_points"] as const,
+  fines: (scope: string) => ["team", scope, "fines"] as const,
   standings: (scope: string) => ["team", scope, "standings"] as const,
   lineups: (scope: string) => ["team", scope, "lineups"] as const,
   notifications: (scope: string) => ["team", scope, "notifications"] as const,
   users: (scope: string) => ["team", scope, "users"] as const,
   rules: (scope: string) => ["team", scope, "rules"] as const,
+  imageSettings: (scope: string) => ["team", scope, "image-settings"] as const,
 };
 async function read<T>(
   scope: string,
@@ -55,6 +65,12 @@ async function read<T>(
   return result.data as T;
 }
 export const queries = {
+  fines: (scope: string) =>
+    queryOptions({
+      queryKey: keys.fines(scope),
+      queryFn: ({ signal }) => read<Fines>(scope, "fines", signal),
+      staleTime: 30_000,
+    }),
   discussion: (scope: string, target: import("@/lib/discussions").DiscussionTarget) =>
     queryOptions({
       queryKey: [...keys.all(scope), "discussion", target.target_type, target.target_id],
@@ -152,6 +168,12 @@ export const queries = {
       queryFn: ({ signal }) => read<AdminUsers>(scope, "users", signal),
       staleTime: cacheTimes.admin,
     }),
+  imageSettings: (scope: string) =>
+    queryOptions({
+      queryKey: keys.imageSettings(scope),
+      queryFn: ({ signal }) => read<ImageSettings>(scope, "image-settings", signal),
+      staleTime: cacheTimes.admin,
+    }),
   rules: (scope: string) =>
     queryOptions({
       queryKey: keys.rules(scope),
@@ -164,6 +186,16 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
   const targets: (readonly unknown[])[] = [];
   const add = (...values: (readonly unknown[])[]) => targets.push(...values);
   switch (change.kind) {
+    case "fine-multiplier":
+    case "fine-type":
+    case "fine-rules":
+    case "fine":
+    case "cancel-fine":
+      add(keys.fines(scope));
+      break;
+    case "image-settings":
+      add(keys.imageSettings(scope), keys.session(scope));
+      break;
     case "profile-photo":
     case "remove-profile-photo":
       add(keys.session(scope), keys.roster(scope), keys.posts(scope), ["team", scope, "post"]);
@@ -210,6 +242,7 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
       add(keys.volunteerWorkPoints(scope));
       break;
     case "user":
+      add(keys.fines(scope));
       add(keys.volunteerWorkPoints(scope));
     case "positions":
       add(keys.roster(scope), keys.users(scope));

@@ -77,7 +77,11 @@ export function TeamProvider({ initial, children }: { initial: Access; children:
   );
 }
 function Session({ initial, children }: { initial: Access; children: ReactNode }) {
-  const session = useQuery({ ...queries.session(initial.scope), initialData: initial });
+  const session = useQuery({
+    ...queries.session(initial.scope),
+    initialData: initial,
+    refetchInterval: 30_000,
+  });
   const pathname = usePathname();
   const client = useQueryClient();
   // The layout persists. Re-check stale authorization on navigation even when

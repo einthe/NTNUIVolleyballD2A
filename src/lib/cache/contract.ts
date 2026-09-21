@@ -5,7 +5,9 @@ export type Access = {
   roles: SecondaryRole[];
   scope: string;
   imageLimitMB: number;
+  responsiveImages: boolean;
 };
+export type ImageSettings = { responsive_images: boolean; version: number };
 export function accessScope(profile: Profile, roles: SecondaryRole[]) {
   return encodeURIComponent(
     JSON.stringify([profile.id, profile.base_role, profile.account_status, [...roles].sort()]),

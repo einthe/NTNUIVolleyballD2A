@@ -1909,6 +1909,7 @@ legend {
 }
 .admin-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 24px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 15px;
@@ -3327,4 +3328,113 @@ legend {
 }
 .small-event > .discussion-counts {
   font-size: 9px;
+}
+
+.fine-panels {
+  display: grid;
+  gap: 20px;
+  max-width: 900px;
+}
+.fines-table {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+.fines-table > tbody > tr > td:first-child,
+.fines-table > thead > tr > th:first-child {
+  width: 42px;
+}
+.fine-member-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+.fines-table th:nth-child(2),
+.fines-table th[scope="row"] {
+  min-width: 0;
+}
+.fine-member-toggle span {
+  overflow-wrap: anywhere;
+}
+.fine-member-toggle small {
+  display: block;
+  font-weight: 400;
+}
+.fine-chevron-open {
+  transform: rotate(180deg);
+}
+.fine-total {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.fine-detail-row > td {
+  text-align: left;
+  background: var(--bg);
+}
+.fine-history,
+.fine-catalog {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.fine-history > li,
+.fine-catalog > li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.fine-history > li:last-child,
+.fine-catalog > li:last-child {
+  border-bottom: 0;
+}
+.fine-history-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.fine-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fine-text a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.fine-cancelled .fine-history-heading {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.fine-assignment {
+  padding: 16px 0 24px;
+  max-width: 620px;
+}
+.fine-type-editor {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.fine-panels details[open] > summary {
+  margin-bottom: 18px;
+}
+@media (max-width: 480px) {
+  .fines-table th,
+  .fines-table td {
+    padding: 10px 7px;
+  }
+  .fines-table > tbody > tr > td:first-child,
+  .fines-table > thead > tr > th:first-child {
+    width: 24px;
+  }
+  .fine-member-toggle {
+    gap: 5px;
+  }
+  .fines-table .fine-detail-row > td {
+    padding: 16px;
+  }
 }

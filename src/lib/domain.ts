@@ -11,6 +11,7 @@ export const secondaryRoles = {
   social_coordinator: "Sosialansvarlig",
   financial_manager: "Økonomiansvarlig",
   volunteer_work_coordinator: "Dugnadsansvarlig",
+  fine_manager: "Botsjef",
 } as const;
 export const positions = {
   outside_hitter: "Kant",
@@ -277,7 +278,9 @@ export const userSchema = z.object({
   base_role: z.enum(["player", "coach"]),
   account_status: z.enum(["approved", "rejected", "disabled"]),
   jersey_number: z.number().int().min(0).max(99).nullable(),
-  roles: z.array(z.enum(Object.keys(secondaryRoles) as [SecondaryRole, ...SecondaryRole[]])).max(8),
+  roles: z
+    .array(z.enum(Object.keys(secondaryRoles) as [SecondaryRole, ...SecondaryRole[]]))
+    .max(Object.keys(secondaryRoles).length),
 });
 export const positionSchema = z
   .object({
@@ -314,6 +317,7 @@ export const roleTone: Record<SecondaryRole, string> = {
   social_coordinator: "purple",
   financial_manager: "green",
   volunteer_work_coordinator: "orange",
+  fine_manager: "gold",
 };
 export const eventTone: Record<EventType, string> = {
   match: "green",

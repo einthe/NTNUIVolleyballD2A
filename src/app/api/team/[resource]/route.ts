@@ -19,6 +19,7 @@ import { eventTypes, uuid } from "@/lib/domain";
 import { discussionTargetSchema } from "@/lib/discussions";
 import { getStandings } from "@/server/standings";
 import { StandingsError } from "@/server/standings/config";
+import { getImageSettings, getResponsiveImages } from "@/server/image-settings";
 
 export const dynamic = "force-dynamic";
 const json = (body: unknown, status = 200) =>
@@ -54,6 +55,13 @@ export async function GET(
         .parse(search.get("page") ?? 1);
     let data: unknown;
     switch (resource) {
+      case "fines": {
+        const db = await createClient({ cache: "no-store" });
+        const result = await db.rpc("get_fines");
+        if (result.error) throw new Error("Bøtene kunne ikke hentes.");
+        data = result.data;
+        break;
+      }
       case "discussion": {
         const target = discussionTargetSchema.parse({
           target_type: search.get("target_type"),
@@ -70,11 +78,16 @@ export async function GET(
         break;
       case "session":
         data = {
+          responsiveImages: await getResponsiveImages(),
           profile,
           roles,
           scope,
           imageLimitMB: Math.min(10, Math.max(1, Number(process.env.MAX_IMAGE_SIZE_MB) || 3)),
         };
+        break;
+      case "image-settings":
+        if (profile.base_role !== "admin") return json({ destination: "/feed" }, 403);
+        data = await getImageSettings();
         break;
       case "posts":
         data = await getPosts(

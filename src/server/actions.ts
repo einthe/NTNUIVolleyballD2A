@@ -1,5 +1,11 @@
 "use server";
 import { volunteerWorkPointsSchema } from "@/lib/volunteer-work-points";
+import {
+  fineTypeSchema,
+  fineRulesSchema,
+  applyFineSchema,
+  fineMultiplierSchema,
+} from "@/lib/fines";
 import { z } from "zod";
 import sharp from "sharp";
 import { forgetImageVariants, warmImageVariants } from "@/server/private-images";
@@ -23,6 +29,20 @@ import type { Change } from "@/lib/cache/contract";
 import type { ActionState } from "./auth-actions";
 
 function friendlyError(message: string) {
+  if (message.includes("fine_multipliers_name"))
+    return "Det finnes allerede en ekstraregel med dette navnet.";
+  if (message.includes("invalid_fine_multiplier"))
+    return "Ekstraregelen er ikke tilgjengelig. Oppdater siden og velg på nytt.";
+  if (message.includes("fine_amount_too_small")) return "Samlet bot må være minst 0,01 kr.";
+  if (message.includes("fine_amount_too_large"))
+    return "Samlet bot kan ikke overstige 1 000 000 kr.";
+  if (message.includes("fine_types_name")) return "Det finnes allerede en bot med dette navnet.";
+  if (message.includes("invalid_fine_recipient"))
+    return "Bøter kan bare gis til godkjente spillere og trenere.";
+  if (message.includes("invalid_fine_type"))
+    return "Denne boten er ikke tilgjengelig. Oppdater siden og velg en annen.";
+  if (message.includes("invalid_fine_request"))
+    return "Denne registreringen er allerede brukt. Lukk skjemaet og prøv på nytt.";
   if (message.includes("stale_"))
     return "Innholdet ble endret av noen andre. Last siden på nytt før du lagrer.";
   if (message.includes("jersey_number"))
@@ -62,7 +82,59 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       if (result.error) throw new Error(result.error.message);
       return result.data as string;
     };
-    if (kind === "profile-photo" || kind === "remove-profile-photo") {
+    if (kind === "fine-multiplier") {
+      await rpc("save_fine_multiplier", {
+        data: fineMultiplierSchema.parse({
+          id: text("id") || undefined,
+          name: text("name"),
+          description: text("description"),
+          factor: text("factor"),
+          active: text("active") === "on",
+          expected_version: text("expected_version"),
+        }),
+      });
+    } else if (kind === "fine-type") {
+      await rpc("save_fine_type", {
+        data: fineTypeSchema.parse({
+          id: text("id") || undefined,
+          name: text("name"),
+          description: text("description"),
+          amount_ore: text("amount"),
+          active: text("active") === "on",
+          expected_version: text("expected_version"),
+        }),
+      });
+    } else if (kind === "fine-rules") {
+      await rpc("save_fine_rules", {
+        data: fineRulesSchema.parse({
+          body: text("body"),
+          expected_version: text("expected_version"),
+        }),
+      });
+    } else if (kind === "fine") {
+      await rpc("apply_fine", {
+        data: applyFineSchema.parse({
+          id: text("id"),
+          user_id: text("user_id"),
+          fine_type_id: text("fine_type_id"),
+          expected_type_version: text("expected_type_version"),
+          multiplier_id: text("multiplier_id") || undefined,
+          expected_multiplier_version: text("expected_multiplier_version") || undefined,
+          note: text("note"),
+        }),
+      });
+    } else if (kind === "cancel-fine") {
+      await rpc("cancel_fine", { target: uuid.parse(text("id")) });
+    } else if (kind === "image-settings") {
+      if (profile.base_role !== "admin") throw new Error("not_authorized");
+      const expectedVersion = z.coerce.number().int().min(0).parse(text("expected_version"));
+      await rpc("set_image_settings", {
+        data: {
+          responsive_images: text("responsive_images") === "on",
+          expected_version: expectedVersion,
+        },
+      });
+    } else if (kind === "profile-photo" || kind === "remove-profile-photo") {
       let path: string | null = null;
       if (kind === "profile-photo") {
         const file = form.get("image");

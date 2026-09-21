@@ -7,6 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <nav className="admin-nav" aria-label="Administrasjon">
         <Link href="/admin/users">Brukere og tilganger</Link>
         <Link href="/admin/notifications">Varselinnstillinger</Link>
+        <Link href="/admin/images">Bildeinnstillinger</Link>
       </nav>
       {children}
     </>

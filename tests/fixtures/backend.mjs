@@ -277,6 +277,12 @@ export async function startLocalBackend({
                   ).rows.map((r) => r.row),
                 );
               const isData = Object.hasOwn(body, "data");
+              if (Object.keys(body).length === 0)
+                return send(
+                  res,
+                  200,
+                  (await db.query(`select public.${name}() as result`)).rows[0].result,
+                );
               const argument = isData ? JSON.stringify(body.data) : body.target;
               return send(
                 res,

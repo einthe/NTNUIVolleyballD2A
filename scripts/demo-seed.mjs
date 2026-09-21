@@ -48,7 +48,7 @@ export async function seedDemo({ db, addUser, files }) {
     ["henrik", "Henrik Moen", 10, "outside_hitter", ["social_coordinator"]],
     ["oskar", "Oskar Bakke", 12, "middle_blocker", ["financial_manager"]],
     ["lucas", "Lucas Eide", 3, "libero", ["volunteer_work_coordinator"]],
-    ["theo", "Theo Aasen", 5, "setter", []],
+    ["theo", "Theo Aasen", 5, "setter", ["fine_manager"]],
     ["isak", "Isak Holm", 7, "outside_hitter", []],
     ["mathias", "Mathias Lund", 9, "opposite", []],
     ["adrian", "Adrian Foss", 14, "middle_blocker", []],
@@ -69,6 +69,42 @@ export async function seedDemo({ db, addUser, files }) {
     });
     players.push(player);
   }
+  const fineManager = players[7];
+  await rpc(fineManager, "save_fine_multiplier", {
+    name: "Kampdag",
+    description: "Dobbelt beløp på kampdager.",
+    factor: 2,
+    active: true,
+  });
+  const lateFine = await rpc(fineManager, "save_fine_type", {
+    name: "For sent til trening",
+    description: "Oppmøte etter avtalt starttid.",
+    amount_ore: 5000,
+    active: true,
+  });
+  const equipmentFine = await rpc(fineManager, "save_fine_type", {
+    name: "Glemt utstyr",
+    description: "Glemt avtalt treningsutstyr.",
+    amount_ore: 2500,
+    active: true,
+  });
+  await rpc(fineManager, "save_fine_rules", {
+    body: "Dette er fiktive botregler for demoen.\nBotsjef registrerer bøter etter lagets avtaler. Kontakt Botsjef hvis noe er feil.",
+    expected_version: 0,
+  });
+  for (const [recipient, fineType, note] of [
+    [players[0], lateFine, "Fiktivt eksempel: kom fem minutter for sent."],
+    [players[0], equipmentFine, "Fiktivt eksempel: glemte knebeskyttere."],
+    [coach, lateFine, "Fiktivt eksempel på bot til trener."],
+    [players[2], equipmentFine, ""],
+  ])
+    await rpc(fineManager, "apply_fine", {
+      id: randomUUID(),
+      user_id: recipient.id,
+      fine_type_id: fineType,
+      expected_type_version: 0,
+      note,
+    });
   await user("pending", "Sander Nygaard");
   await member("disabled", "William Lie", "player", { account_status: "disabled" });
   for (const trigger_key of [

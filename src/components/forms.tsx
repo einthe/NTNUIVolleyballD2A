@@ -46,10 +46,12 @@ export function ActionForm({
   children,
   className,
   auth = false,
+  onSuccess,
 }: {
   children: ReactNode;
   className?: string;
   auth?: boolean;
+  onSuccess?: () => void;
 }) {
   const router = useRouter();
   const client = useContext(QueryClientContext);
@@ -68,6 +70,7 @@ export function ActionForm({
       }
     }
     if (result.destination) router.push(result.destination);
+    if (result.success) onSuccess?.();
     return result;
   }, {});
   return (

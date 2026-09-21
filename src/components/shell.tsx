@@ -11,6 +11,7 @@ import {
   CheckCheck,
   Volleyball,
   HandHelping,
+  ReceiptText,
   PartyPopper,
   Menu,
   X,
@@ -30,6 +31,7 @@ const links = [
   { href: "/standings", label: "Tabell", icon: ListOrdered },
   { href: "/roster", label: "Tropp", icon: Users },
   { href: "/volunteer_work_points", label: "Dugnadspoeng", icon: HandHelping },
+  { href: "/fines", label: "Bøter", icon: ReceiptText },
 ];
 const shortcuts = [
   { type: "match", label: "Kamper", icon: Volleyball },
@@ -161,13 +163,15 @@ export function Shell({ children }: { children: ReactNode }) {
                 ? "Tabell"
                 : pathname.startsWith("/volunteer_work_points")
                   ? "Dugnadspoeng"
-                  : pathname.startsWith("/roster")
-                    ? "Tropp"
-                    : pathname.startsWith("/admin")
-                      ? "Administrasjon"
-                      : pathname === "/profile"
-                        ? "Min profil"
-                        : "Innlegg"}
+                  : pathname.startsWith("/fines")
+                    ? "Bøter"
+                    : pathname.startsWith("/roster")
+                      ? "Tropp"
+                      : pathname.startsWith("/admin")
+                        ? "Administrasjon"
+                        : pathname === "/profile"
+                          ? "Min profil"
+                          : "Innlegg"}
           </span>
           <div className="topbar-controls">
             <details ref={notificationMenu} className="notification-menu">
