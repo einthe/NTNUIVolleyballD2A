@@ -2,6 +2,7 @@
 import { volunteerWorkPointsSchema } from "@/lib/volunteer-work-points";
 import { z } from "zod";
 import sharp from "sharp";
+import { forgetImageVariants, warmImageVariants } from "@/server/private-images";
 import { createClient } from "@/lib/supabase/server";
 import { requireAccount } from "@/server/queries";
 import {
@@ -41,7 +42,7 @@ function friendlyError(message: string) {
 }
 export async function mutate(previousState: ActionState, form: FormData): Promise<ActionState> {
   const profile = await requireAccount();
-  const db = await createClient();
+  const db = await createClient({ cache: "no-store" });
   const kind = String(form.get("action"));
   const text = (key: string) => String(form.get(key) ?? "");
   const nullable = (key: string) => text(key) || null;
@@ -87,6 +88,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
           .from("profile-photos")
           .upload(path, buffer, { contentType: "image/webp", upsert: false });
         if (upload.error) return { error: "Bildet kunne ikke lastes opp. Prøv igjen." };
+        await warmImageVariants(db, "avatar", path, buffer);
       }
       let previous: string | null;
       try {
@@ -94,10 +96,16 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
           data: { storage_path: path, expected_path: nullable("expected_path") },
         });
       } catch (error) {
-        if (path) await db.storage.from("profile-photos").remove([path]);
+        if (path) {
+          await db.storage.from("profile-photos").remove([path]);
+          forgetImageVariants("avatar", path);
+        }
         throw error;
       }
-      if (previous) await db.storage.from("profile-photos").remove([previous]);
+      if (previous) {
+        await db.storage.from("profile-photos").remove([previous]);
+        forgetImageVariants("avatar", previous);
+      }
     } else if (kind === "post") {
       const input = postSchema.parse({
         id: savedPost.savedPostId || text("id") || undefined,
@@ -160,6 +168,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
               alt_text: alt,
             },
           });
+          await warmImageVariants(db, "post", path, image.buffer);
         } catch {
           await db.storage.from("post-images").remove([path]);
           return {
@@ -263,8 +272,10 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       const { data: media } = await db.from("post_media").select("storage_path").eq("post_id", id);
       await rpc("delete_post", { target: id });
       change.postId = id;
-      if (media?.length)
+      if (media?.length) {
         await db.storage.from("post-images").remove(media.map((m) => m.storage_path));
+        media.forEach((item) => forgetImageVariants("post", item.storage_path));
+      }
       destination = "/feed";
     } else if (kind === "delete-event") {
       await rpc("delete_event", { target: uuid.parse(text("id")) });
@@ -276,6 +287,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       change.postId = media.data.post_id;
       const path = await rpc("remove_media", { target: mediaId });
       await db.storage.from("post-images").remove([path]);
+      forgetImageVariants("post", path);
     } else return { error: "Ukjent handling." };
   } catch (error) {
     if (error instanceof z.ZodError) return { ...savedPost, error: error.issues[0].message };

@@ -2,7 +2,7 @@
 // Storage HTTP are simulated. This is not a replacement for hosted Supabase E2E.
 import { PGlite } from "@electric-sql/pglite";
 import { createServer } from "node:http";
-import { createHmac, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -353,10 +353,15 @@ export async function startLocalBackend({
             if (path.startsWith("/storage/v1/object")) {
               if (!actor) return send(res, 403, {});
               const prefix = "/storage/v1/object/",
+                infoPrefix = "/storage/v1/object/info/",
                 authenticatedPrefix = "/storage/v1/object/authenticated/";
               const resource = decodeURIComponent(
                 path.slice(
-                  path.startsWith(authenticatedPrefix) ? authenticatedPrefix.length : prefix.length,
+                  path.startsWith(infoPrefix)
+                    ? infoPrefix.length
+                    : path.startsWith(authenticatedPrefix)
+                      ? authenticatedPrefix.length
+                      : prefix.length,
                 ),
               );
               const [bucket, ...parts] = resource.split("/");
@@ -391,6 +396,20 @@ export async function startLocalBackend({
                   ])
                 ).rows;
                 if (!rows.length || !files.has(`${bucket}/${name}`)) return send(res, 404, {});
+                if (path.startsWith(infoPrefix)) {
+                  const file = files.get(`${bucket}/${name}`);
+                  return send(res, 200, {
+                    id: rows[0].id,
+                    version: createHash("sha256").update(file).digest("hex"),
+                    name,
+                    bucket_id: bucket,
+                    size: file.length,
+                  });
+                }
+                if (failures.get("download") > 0) {
+                  failures.set("download", failures.get("download") - 1);
+                  return send(res, 503, { error: "Storage download unavailable" });
+                }
                 res.writeHead(200, { "Content-Type": "image/webp" });
                 return res.end(files.get(`${bucket}/${name}`));
               }

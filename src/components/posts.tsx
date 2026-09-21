@@ -20,6 +20,7 @@ import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
 import { DiscussionCounts } from "./discussion-counts";
 import { LinkedText } from "./linked-text";
+import { imageWidths } from "@/lib/image-variants";
 export function PostCard({
   post,
   profile,
@@ -109,6 +110,15 @@ export function PostCard({
             <img
               className="post-image"
               src={`/media/${media.id}`}
+              srcSet={imageWidths.post
+                .map((width) => `/media/${media.id}?w=${width} ${width}w`)
+                .join(", ")}
+              sizes={
+                detail
+                  ? "(max-width: 760px) calc(100vw - 82px), (max-width: 1190px) min(742px, calc(100vw - 304px)), min(742px, calc(100vw - 356px))"
+                  : "(max-width: 760px) calc(100vw - 82px), (max-width: 980px) calc(100vw - 304px), (max-width: 1190px) calc(100vw - 569px), (max-width: 1499px) calc(100vw - 668px), min(974px, calc(100vw - 700px))"
+              }
+              decoding="async"
               alt={media.alt_text || `Bilde til innlegget ${post.title}`}
               loading="lazy"
             />

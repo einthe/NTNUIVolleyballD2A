@@ -21,7 +21,10 @@ export async function proxy(request: NextRequest) {
   // Verify/refresh the token with cached signing keys where supported. Private
   // reads and writes still fetch the current user and account status themselves.
   await supabase.auth.getClaims();
-  response.headers.set("Cache-Control", "private, no-store");
+  // Image handlers set private revalidation headers after their own live access checks.
+  // A Proxy response header would override those headers, disabling browser caching.
+  if (!/^\/(?:media|avatars)\/[^/]+\/?$/.test(request.nextUrl.pathname))
+    response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
 export const config = {

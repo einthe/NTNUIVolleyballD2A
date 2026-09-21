@@ -43,11 +43,19 @@ test("profile pictures upload, persist, replace and remove across the account, p
   await expect(avatar).toBeVisible();
   await expect
     .poll(() => avatar.evaluate((img) => (img as HTMLImageElement).naturalWidth))
-    .toBe(512);
+    .toBeGreaterThan(0);
   const firstSrc = (await avatar.getAttribute("src"))!;
   const photo = await page.request.get(firstSrc);
   expect(photo.status()).toBe(200);
-  expect(photo.headers()["cache-control"]).toBe("private, no-store");
+  expect(photo.headers()["cache-control"]).toBe("private, no-cache, must-revalidate");
+  const etag = photo.headers().etag;
+  expect(etag).toBeTruthy();
+  const conditional = await page.request.get(firstSrc, { headers: { "If-None-Match": etag } });
+  expect(conditional.status()).toBe(304);
+  expect((await conditional.body()).length).toBe(0);
+  const chosen = await avatar.evaluate((img) => (img as HTMLImageElement).currentSrc);
+  const thumbnail = await page.request.get(chosen);
+  expect((await sharp(await thumbnail.body()).metadata()).width).toBeLessThanOrEqual(128);
   expect((await request.get(firstSrc)).status()).toBe(403);
   await page.reload();
   await expect(avatar).toHaveAttribute("src", firstSrc);
@@ -78,8 +86,14 @@ test("profile pictures upload, persist, replace and remove across the account, p
   await expect(avatar).not.toHaveAttribute("src", firstSrc);
   await expect
     .poll(() => avatar.evaluate((img) => (img as HTMLImageElement).naturalWidth))
-    .toBe(512);
+    .toBeGreaterThan(0);
   const secondSrc = (await avatar.getAttribute("src"))!;
+  expect((await page.request.get(firstSrc, { headers: { "If-None-Match": etag } })).status()).toBe(
+    404,
+  );
+  const replacement = await page.request.get(secondSrc, { headers: { "If-None-Match": etag } });
+  expect(replacement.status()).toBe(200);
+  expect(replacement.headers().etag).not.toBe(etag);
   const oldPath = new URL(firstSrc, page.url()).searchParams.get("v");
   const signed = await account.service.auth.signInWithPassword({
     email: account.email,
