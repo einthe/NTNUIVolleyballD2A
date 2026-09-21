@@ -1,6 +1,10 @@
+"use client";
+import { useState } from "react";
+import { registrationRoleKeys, secondaryRoles } from "@/lib/domain";
 import Link from "next/link";
 import { ActionForm, Submit } from "@/components/forms";
 export default function SignUp() {
+  const [role, setRole] = useState("player");
   return (
     <>
       <h2>Opprett konto</h2>
@@ -43,6 +47,40 @@ export default function SignUp() {
             placeholder="Minst 12 tegn"
           />
         </label>
+        <label>
+          Rolle
+          <select name="base_role" value={role} onChange={(event) => setRole(event.target.value)}>
+            <option value="player">Spiller</option>
+            <option value="coach">Trener</option>
+          </select>
+        </label>
+        {role === "player" && (
+          <>
+            <label>
+              Draktnummer
+              <input
+                name="jersey_number"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={99}
+                step={1}
+                required
+              />
+            </label>
+            <fieldset>
+              <legend>Verv (valgfritt)</legend>
+              <div className="checkbox-grid">
+                {registrationRoleKeys.map((key) => (
+                  <label key={key} className="checkbox-label">
+                    <input type="checkbox" name="roles" value={key} />
+                    {secondaryRoles[key]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </>
+        )}
         <Submit>Opprett konto</Submit>
       </ActionForm>
       <div className="auth-switch">

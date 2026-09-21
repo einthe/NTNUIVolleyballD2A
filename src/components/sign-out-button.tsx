@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { signOut } from "@/server/auth-actions";
 import { leaveAuthContext } from "@/lib/cache/auth-events";
-export function SignOutButton() {
+export function SignOutButton({ className }: { className?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -20,7 +20,7 @@ export function SignOutButton() {
         }
       }}
     >
-      <button type="submit" disabled={pending}>
+      <button type="submit" className={className} disabled={pending}>
         Logg ut
       </button>
       {error && <p role="alert">{error}</p>}

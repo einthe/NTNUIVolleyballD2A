@@ -62,14 +62,34 @@ describe("schedule authorization", () => {
   });
 });
 describe("runtime validation", () => {
-  it("requires neither jersey nor position at registration", () => {
+  it("validates registration roles and requires a jersey only for players", () => {
+    const credentials = {
+      full_name: "Test Player",
+      email: "test@example.com",
+      password: "long-test-password",
+    };
+    expect(registrationSchema.safeParse({ ...credentials, base_role: "coach" }).success).toBe(true);
     expect(
-      registrationSchema.safeParse({
-        full_name: "Test Player",
-        email: "test@example.com",
-        password: "long-test-password",
-      }).success,
+      registrationSchema.safeParse({ ...credentials, base_role: "player", jersey_number: 0 })
+        .success,
     ).toBe(true);
+    expect(registrationSchema.safeParse({ ...credentials, base_role: "player" }).success).toBe(
+      false,
+    );
+    expect(registrationSchema.safeParse({ ...credentials, base_role: "admin" }).success).toBe(
+      false,
+    );
+    const player = {
+      ...credentials,
+      base_role: "player",
+      jersey_number: 17,
+      roles: ["fine_manager", "social_media_manager"],
+    };
+    expect(registrationSchema.safeParse(player).success).toBe(true);
+    for (const jersey_number of [null, -1, 100, 1.5])
+      expect(registrationSchema.safeParse({ ...player, jersey_number }).success).toBe(false);
+    for (const role of ["captain", "vice_captain", "admin"])
+      expect(registrationSchema.safeParse({ ...player, roles: [role] }).success).toBe(false);
   });
   it("rejects admin assignment and invalid jersey numbers", () => {
     const data = {

@@ -76,6 +76,7 @@ test("demo admin can approve a fictional registration while disabled accounts re
   await page.getByLabel("Fullt navn").fill(name);
   await page.getByLabel("E-postadresse").fill(email);
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
+  await page.getByLabel("Draktnummer").fill(testInfo.project.name === "mobile" ? "92" : "91");
   await page.getByRole("button", { name: "Opprett konto", exact: true }).click();
   await expect(page).toHaveURL(/\/auth\/pending(?:\?|$)/);
   await page.getByRole("button", { name: "Logg ut", exact: true }).click();

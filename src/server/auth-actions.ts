@@ -22,13 +22,26 @@ export async function authAction(_state: ActionState, form: FormData): Promise<A
       email,
       password,
       full_name: form.get("full_name"),
+      base_role: form.get("base_role"),
+      jersey_number:
+        String(form.get("jersey_number") ?? "").trim() === ""
+          ? undefined
+          : Number(form.get("jersey_number")),
+      roles: form.getAll("roles"),
     });
     if (!input.success) return { error: input.error.issues[0].message };
     const { error } = await db.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: input.data.full_name },
+        data: {
+          full_name: input.data.full_name,
+          registration: {
+            base_role: input.data.base_role,
+            jersey_number: input.data.base_role === "player" ? input.data.jersey_number : null,
+            roles: input.data.base_role === "player" ? input.data.roles : [],
+          },
+        },
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
       },
     });

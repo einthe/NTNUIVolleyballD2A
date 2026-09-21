@@ -13,6 +13,20 @@ export const secondaryRoles = {
   volunteer_work_coordinator: "Dugnadsansvarlig",
   fine_manager: "Botsjef",
 } as const;
+export const registrationRoleKeys = [
+  "social_media_manager",
+  "team_manager",
+  "travel_coordinator",
+  "social_coordinator",
+  "financial_manager",
+  "volunteer_work_coordinator",
+  "fine_manager",
+] as const;
+export type RegistrationRequest = {
+  base_role: "player" | "coach";
+  jersey_number: number | null;
+  roles: (typeof registrationRoleKeys)[number][];
+};
 export const positions = {
   outside_hitter: "Kant",
   middle_blocker: "Midt",
@@ -190,11 +204,20 @@ const title = z
   .trim()
   .min(1, "Skriv en tittel.")
   .max(160, "Tittelen kan ha høyst 160 tegn.");
-export const registrationSchema = z.object({
+const registrationFields = {
   full_name: z.string().trim().min(2, "Skriv fullt navn.").max(100),
   email: z.email("Skriv en gyldig e-postadresse."),
   password: z.string().min(12, "Passordet må ha minst 12 tegn.").max(128),
-});
+};
+export const registrationSchema = z.discriminatedUnion("base_role", [
+  z.object({
+    ...registrationFields,
+    base_role: z.literal("player"),
+    jersey_number: z.number().int().min(0).max(99),
+    roles: z.array(z.enum(registrationRoleKeys)).max(registrationRoleKeys.length).default([]),
+  }),
+  z.object({ ...registrationFields, base_role: z.literal("coach") }),
+]);
 export const postSchema = z.object({
   id: uuid.optional(),
   title,

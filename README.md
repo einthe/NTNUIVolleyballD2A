@@ -4,7 +4,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 
 ## What is implemented
 
-- Email/password registration, email confirmation callback, password recovery, and pending/approved/rejected/disabled accounts.
+- Email/password registration with player/coach choice, player jersey number and optional Verv for admin review. Email confirmation, password recovery, and pending/approved/rejected/disabled accounts. See [registration setup](docs/registration.md).
 - Admin approval, rejection, deactivation/reactivation, player/coach roles, jersey numbers, secondary roles, and player positions. Admin promotion is **only** a direct database operation.
 - Paginated posts, historical author/role snapshots, own-post editing, admin moderation, and optional private images with descriptions.
 - **Bøter**: ranked totals and expandable histories for players/coaches, a fine-type catalog for everyone with editing for **Botsjef** and admins. Includes exact NOK amounts, historical prices and annulment. See [fine system setup and demo](docs/fines.md) for the required migrations.

@@ -2163,7 +2163,8 @@ legend {
   font-size: 11px;
   gap: 9px;
 }
-.auth-form-wrap input {
+.auth-form-wrap input:not([type="checkbox"]),
+.auth-form-wrap select {
   min-height: 47px;
   padding: 13px 14px;
   background: var(--theme-surface, #181e17);

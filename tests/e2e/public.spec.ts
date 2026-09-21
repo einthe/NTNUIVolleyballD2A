@@ -22,7 +22,9 @@ test("registration and password recovery are reachable and accessible", async ({
   await page.getByRole("link", { name: "Opprett konto" }).click();
   await expect(page.getByLabel("Fullt navn")).toBeVisible();
   await expect(page.getByLabel("Passord", { exact: true })).toHaveAttribute("minlength", "12");
-  expect(await page.locator("input[name=jersey_number]").count()).toBe(0);
+  await expect(page.getByLabel("Draktnummer")).toBeVisible();
+  await page.getByRole("combobox", { name: "Rolle", exact: true }).selectOption("coach");
+  await expect(page.getByLabel("Draktnummer")).toHaveCount(0);
   await page.getByRole("link", { name: "Logg inn", exact: true }).click();
   await page.getByRole("link", { name: "Glemt passord?" }).click();
   await expect(page.getByRole("button", { name: "Send lenke" })).toBeVisible();

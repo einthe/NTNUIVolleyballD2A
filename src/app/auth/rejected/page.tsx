@@ -14,7 +14,7 @@ export default async function Rejected() {
           : "Forespørselen er ikke godkjent."}
       </h2>
       <p className="auth-intro">Kontakt lagets administrator hvis du mener dette er feil.</p>
-      <SignOutButton />
+      <SignOutButton className="button secondary" />
     </>
   );
 }

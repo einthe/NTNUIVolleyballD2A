@@ -1,4 +1,12 @@
-import type { Lineup, Notification, Player, Post, Profile, SecondaryRole } from "@/lib/domain";
+import type {
+  Lineup,
+  Notification,
+  Player,
+  Post,
+  Profile,
+  SecondaryRole,
+  RegistrationRequest,
+} from "@/lib/domain";
 
 export type Access = {
   profile: Profile;
@@ -13,7 +21,10 @@ export function accessScope(profile: Profile, roles: SecondaryRole[]) {
     JSON.stringify([profile.id, profile.base_role, profile.account_status, [...roles].sort()]),
   );
 }
-export type AdminUsers = { users: (Profile & { email: string })[]; players: Player[] };
+export type AdminUsers = {
+  users: (Profile & { email: string; registration_request?: RegistrationRequest | null })[];
+  players: Player[];
+};
 export type NotificationRule = { trigger_key: string; enabled: boolean };
 export type PostList = { posts: Post[]; count: number };
 export type Change = { kind: string; id?: string; postId?: string; matchId?: string };

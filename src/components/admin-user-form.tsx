@@ -1,15 +1,22 @@
 "use client";
 import { useState } from "react";
-import { secondaryRoles, type Player, type Profile } from "@/lib/domain";
+import {
+  secondaryRoles,
+  type Player,
+  type Profile,
+  type RegistrationRequest,
+  type SecondaryRole,
+} from "@/lib/domain";
 import { ActionForm, Submit } from "./forms";
 export function AdminUserForm({
   user,
   player,
 }: {
-  user: Profile & { email: string };
+  user: Profile & { email: string; registration_request?: RegistrationRequest | null };
   player?: Player;
 }) {
-  const [role, setRole] = useState(user.base_role ?? "player");
+  const request = user.account_status === "pending" ? user.registration_request : null;
+  const [role, setRole] = useState(request?.base_role ?? user.base_role ?? "player");
   return (
     <ActionForm>
       <input type="hidden" name="action" value="user" />
@@ -63,7 +70,7 @@ export function AdminUserForm({
               name="jersey_number"
               min={0}
               max={99}
-              defaultValue={player?.player_profiles?.jersey_number ?? ""}
+              defaultValue={request?.jersey_number ?? player?.player_profiles?.jersey_number ?? ""}
               placeholder="Ikke tildelt"
             />
           </label>
@@ -79,7 +86,11 @@ export function AdminUserForm({
                   type="checkbox"
                   name="roles"
                   value={key}
-                  defaultChecked={player?.player_secondary_roles.some((r) => r.role_key === key)}
+                  defaultChecked={
+                    request
+                      ? (request.roles as SecondaryRole[]).includes(key as SecondaryRole)
+                      : player?.player_secondary_roles.some((r) => r.role_key === key)
+                  }
                 />
                 {label}
               </label>

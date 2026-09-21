@@ -71,6 +71,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await page.getByLabel("Fullt navn").fill(`Player ${run}`);
     await page.getByLabel("E-postadresse").fill(email);
     await page.getByLabel("Passord", { exact: true }).fill(password);
+    await page.getByLabel("Draktnummer").fill("90");
     await page.getByRole("button", { name: "Opprett konto" }).click();
     await expect(page.getByRole("heading", { name: "Venter på godkjenning." })).toBeVisible();
     const context = await browser.newContext({
@@ -87,6 +88,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await admin.goto("/admin/users");
     const request = admin.locator("details.admin-user").filter({ hasText: email });
     await request.locator("summary").first().click();
+    await request.getByLabel("Draktnummer").fill("");
     await request.getByRole("button", { name: "Behandle forespørsel" }).click();
     await expect(request.getByRole("status")).toContainText("lagret");
     await page.goto("/feed");

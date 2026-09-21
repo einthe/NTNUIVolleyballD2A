@@ -17,10 +17,12 @@ export default async function Pending() {
         Administrator må godkjenne kontoen før du får tilgang. Hvis du har fått en bekreftelseslenke
         på e-post, åpne den først.
       </p>
-      <Link className="button" href="/feed">
-        Sjekk tilgang
-      </Link>
-      <SignOutButton />
+      <div className="button-row">
+        <Link className="button" href="/feed">
+          Sjekk tilgang
+        </Link>
+        <SignOutButton className="button secondary" />
+      </div>
     </>
   );
 }
