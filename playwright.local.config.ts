@@ -32,6 +32,8 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 120000,
       env: {
+        NOTIFICATION_EMAIL_MODE: "disabled",
+        RESEND_API_KEY: "",
         NEXT_BUILD_DIR: ".next-local-tests",
         NEXT_PUBLIC_GIPHY_API_KEY: "local-test-giphy-key-not-real",
         NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54329",

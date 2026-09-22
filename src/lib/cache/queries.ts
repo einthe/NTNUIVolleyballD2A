@@ -3,7 +3,7 @@ import type { Player, Post, TeamEvent, Lineup, Notification } from "@/lib/domain
 import type {
   Access,
   AdminUsers,
-  NotificationRule,
+  NotificationSettings,
   PostList,
   Change,
   ImageSettings,
@@ -177,7 +177,7 @@ export const queries = {
   rules: (scope: string) =>
     queryOptions({
       queryKey: keys.rules(scope),
-      queryFn: ({ signal }) => read<NotificationRule[]>(scope, "rules", signal),
+      queryFn: ({ signal }) => read<NotificationSettings>(scope, "rules", signal),
       staleTime: cacheTimes.rules,
     }),
 };

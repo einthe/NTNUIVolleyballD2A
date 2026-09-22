@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { notificationPath } from "@/lib/notification-links";
 import { baseRoles } from "@/lib/domain";
 import { PaletteSelector } from "./palette-selector";
 import {
@@ -218,13 +219,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   )}
                 {notifications.map((n) => (
                   <article key={n.id} className={`notification-item ${n.read_at ? "" : "unread"}`}>
-                    <Link
-                      href={
-                        n.target_id
-                          ? `/${n.target_type === "post" ? "posts" : "schedule"}/${n.target_id}`
-                          : "/feed"
-                      }
-                    >
+                    <Link href={notificationPath(n.target_type, n.target_id)}>
                       <strong>{n.title}</strong>
                       <p>{n.body}</p>
                     </Link>

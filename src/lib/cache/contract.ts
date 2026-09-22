@@ -25,7 +25,24 @@ export type AdminUsers = {
   users: (Profile & { email: string; registration_request?: RegistrationRequest | null })[];
   players: Player[];
 };
-export type NotificationRule = { trigger_key: string; enabled: boolean };
+export type NotificationRule = { trigger_key: string; enabled: boolean; email_enabled: boolean };
+export type NotificationSettings = {
+  rules: NotificationRule[];
+  delivery: { mode: "disabled" | "preview" | "resend"; configured: boolean; missing: string[] };
+  queue: {
+    pending: number;
+    sent: number;
+    failed: number;
+    recent: {
+      id: string;
+      title: string;
+      body: string;
+      full_name: string;
+      status: string;
+      last_error: string | null;
+    }[];
+  };
+};
 export type PostList = { posts: Post[]; count: number };
 export type Change = { kind: string; id?: string; postId?: string; matchId?: string };
 export type { Lineup, Notification };

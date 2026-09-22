@@ -58,7 +58,31 @@ export const eventTypes = {
   other: "Annet",
 } as const;
 export const notificationTriggers = {
+  post_by_captain: "Innlegg fra Kaptein",
+  post_by_vice_captain: "Innlegg fra Visekaptein",
+  post_by_social_media_manager: "Innlegg fra SoMe",
+  post_by_team_manager: "Innlegg fra Oppmann",
+  post_by_travel_coordinator: "Innlegg fra Reiseansvarlig",
+  post_by_social_coordinator: "Innlegg fra Sosialansvarlig",
+  post_by_financial_manager: "Innlegg fra Økonomiansvarlig",
+  post_by_volunteer_work_coordinator: "Innlegg fra Dugnadsansvarlig",
+  post_by_fine_manager: "Innlegg fra Botsjef",
+  event_by_team_manager: "Hendelser fra Oppmann",
+  event_by_travel_coordinator: "Hendelser fra Reiseansvarlig",
+  event_by_social_coordinator: "Hendelser fra Sosialansvarlig",
+  event_by_financial_manager: "Hendelser fra Økonomiansvarlig",
+  event_by_volunteer_work_coordinator: "Hendelser fra Dugnadsansvarlig",
   normal_post_created: "Nye innlegg",
+  post_by_coach: "Innlegg fra trener",
+  event_by_coach: "Hendelser fra trener",
+  other_event_created: "Andre hendelser",
+  post_comment_created: "Kommentarer på innlegg",
+  event_comment_created: "Kommentarer på hendelser",
+  comment_reply_created: "Svar på kommentarer",
+  post_reaction_created: "Reaksjoner på innlegg",
+  event_reaction_created: "Reaksjoner på hendelser",
+  fine_received: "Mottatt bot",
+  volunteer_points_changed: "Endrede dugnadspoeng",
   role_context_post_created: "Nye innlegg fra ansvarsroller",
   match_created: "Nye kamper",
   match_updated: "Endringer i kamper",
@@ -164,7 +188,7 @@ export type Notification = {
   id: string;
   title: string;
   body: string;
-  target_type: "post" | "event" | null;
+  target_type: import("./notification-links").NotificationTarget;
   target_id: string | null;
   read_at: string | null;
   created_at: string;
@@ -323,6 +347,7 @@ export const notificationSchema = z.object({
     ],
   ),
   enabled: z.boolean(),
+  email_enabled: z.boolean(),
 });
 export const imageSchema = z.object({
   type: z.enum(["image/jpeg", "image/png", "image/webp"]),

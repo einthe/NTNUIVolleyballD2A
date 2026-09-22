@@ -3,6 +3,7 @@ import { TeamProvider } from "@/components/team-provider";
 import { getRoles, requireAccount } from "@/server/queries";
 import { accessScope } from "@/lib/cache/contract";
 import { getResponsiveImages } from "@/server/image-settings";
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireAccount();

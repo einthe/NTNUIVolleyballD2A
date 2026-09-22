@@ -1,3 +1,4 @@
+import { emailConfiguration } from "@/server/notifications/email";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -143,10 +144,12 @@ export async function GET(
         } else {
           const result = await db
             .from("notification_rules")
-            .select("trigger_key,enabled")
+            .select("trigger_key,enabled,email_enabled")
             .order("trigger_key");
           if (result.error) throw new Error("Kunne ikke hente innstillinger.");
-          data = result.data;
+          const status = await db.rpc("notification_email_status");
+          if (status.error) throw new Error("Kunne ikke hente leveringsstatus.");
+          data = { rules: result.data, delivery: emailConfiguration(), queue: status.data };
         }
         break;
       }

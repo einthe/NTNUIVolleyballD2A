@@ -13,7 +13,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Upcoming and archived events, category permissions, match opponents/results, and structured volunteer assignments. No local attendance/RSVP system.
 - A roster without email addresses or admin accounts; coach/admin position editing.
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.
-- In-app notifications, per-user read state, and 13 admin-controlled triggers, all disabled initially.
+- Admin-controlled in-app and Resend email notifications, with separate channel switches for roles, events, discussions, fines and volunteer points. New rules/email switches start off; existing in-app preferences are preserved. See [email setup](docs/email-notifications.md).
 - In-memory read caching with background refresh and list-to-detail reuse; see [cache design and verification](docs/read-cache.md).
 - Eight color palettes: NTNUI (black surfaces with green outlines, yellow accents and red details), Skog (formerly NTNUI), Petroleum (formerly Petrol), Nattblå, Plomme, Rav, Burgunder and Grafitt. Existing saved choices retain their colors. Choose **Fargepalett** in the account menu or on an authentication page. The choice is saved in this browser and synchronized between tabs; no account data is stored with it.
 - Database-enforced authorization, stale-edit checks, private image delivery, automated PostgreSQL/RLS tests, browser tests, and CI.
@@ -93,7 +93,7 @@ Edit `.env.local`:
 | `NEXT_PUBLIC_GIPHY_API_KEY`            | GIPHY browser API key; required for meme reactions. Set in Vercel Production (and Preview if used) before building.                  |
 | `MAX_IMAGE_SIZE_MB`                    | Optional application upload limit; defaults to 3 MB to fit Vercel request limits; capped at the bucket's 10 MB limit on other hosts. |
 
-The application **does not need a service-role key**. Never put one in `NEXT_PUBLIC_*`, source files, or browser code. Hosted Supabase connection details are not included in this repository.
+Private user requests use the publishable key and RLS. Background match sync and email delivery require the server-only `SUPABASE_SECRET_KEY`. Never put this key in `NEXT_PUBLIC_*`, source files, or browser code. Hosted Supabase connection details are not included in this repository.
 
 ### Hosted Supabase
 
@@ -229,7 +229,7 @@ Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/mi
 - Post authors and role context are captured by the database. Post edits preserve historical context. Each lineup save creates a version; published player snapshots are never rewritten. The feed points to the current published version.
 - Writes return Norwegian errors. Post/event edits compare `updated_at`; lineup saves lock the match and compare the latest revision to prevent silent overwrite.
 - Images use generated paths in private buckets. Validated WebP variants are reused from the server Data Cache and selected responsively by the browser. `/media/[id]` and `/avatars/[id]` check current access and source existence before serving images or returning an ETag-based `304`; browser caching is `private, no-cache, must-revalidate`. Direct API uploads are decoded and validated before entering the cache. No public media URLs or public image-optimizer caches are used. See [private image delivery](docs/private-images.md).
-- Notifications are created in the content transaction, so failed transactions cannot announce unpublished content. Disabled triggers produce no rows. Read state is owner-only, and authors are excluded from their own action notifications.
+- Notifications are created in the content transaction, so failed transactions cannot announce unpublished content. Disabled triggers produce no rows. Read state is owner-only. Public activity notifications exclude the actor; personal fine/points/assignment notifications go only to their recipient. Email jobs share the content transaction, are private to server workers, and recheck approval, verified email and the enabled rule before delivery.
 - The interface renders plain text; it does not accept HTML/Markdown scripts. Next.js handles Server Action origin checks. No auth credentials or tokens are logged.
 - Disabling an account immediately blocks future database access. No hard-delete account workflow exists; history remains intact.
 

@@ -7,6 +7,7 @@ import {
   fineMultiplierSchema,
 } from "@/lib/fines";
 import { z } from "zod";
+import { scheduleNotificationEmails } from "./notifications/schedule";
 import sharp from "sharp";
 import { forgetImageVariants, warmImageVariants } from "@/server/private-images";
 import { createClient } from "@/lib/supabase/server";
@@ -80,6 +81,16 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
     const rpc = async (name: string, data: Record<string, unknown>) => {
       const result = await db.rpc(name, data);
       if (result.error) throw new Error(result.error.message);
+      if (
+        [
+          "save_post",
+          "save_event",
+          "save_lineup",
+          "apply_fine",
+          "set_volunteer_work_points",
+        ].includes(name)
+      )
+        scheduleNotificationEmails();
       return result.data as string;
     };
     if (kind === "fine-multiplier") {
@@ -335,6 +346,7 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         data: notificationSchema.parse({
           trigger_key: text("trigger_key"),
           enabled: text("enabled") === "on",
+          email_enabled: text("email_enabled") === "on",
         }),
       });
     } else if (kind === "read-notification") {

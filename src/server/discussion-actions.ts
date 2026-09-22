@@ -1,4 +1,5 @@
 "use server";
+import { scheduleNotificationEmails } from "./notifications/schedule";
 import { z } from "zod";
 import { commentSchema, deleteCommentSchema, reactionSchema } from "@/lib/discussions";
 import { requireAccount } from "@/server/queries";
@@ -37,6 +38,7 @@ export async function updateDiscussion(
         return { error: "Svar på en tidligere kommentar i tråden." };
       return { error: "Kunne ikke lagre. Prøv igjen." };
     }
+    if (action !== "delete") scheduleNotificationEmails();
     return {};
   } catch (error) {
     return {

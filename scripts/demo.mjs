@@ -52,6 +52,9 @@ const child = spawn(
     env: {
       ...process.env,
       NODE_ENV: "development",
+      NOTIFICATION_EMAIL_MODE: "preview",
+      RESEND_API_KEY: "",
+      RESEND_FROM_EMAIL: "NTNUI D2A <demo@example.test>",
       NEXT_BUILD_DIR: process.env.NEXT_BUILD_DIR ?? ".next-demo",
       NEXT_PUBLIC_SUPABASE_URL: backend.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "local-demo-publishable-key",
