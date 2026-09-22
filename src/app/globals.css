@@ -951,6 +951,105 @@ small {
 .post-image-wrap > .text-button {
   margin-top: 5px;
 }
+.post-gallery {
+  min-width: 0;
+}
+.post-gallery-stage {
+  position: relative;
+}
+.post-gallery-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 8px;
+  overscroll-behavior-x: contain;
+}
+.post-gallery-track::-webkit-scrollbar {
+  display: none;
+}
+.post-gallery-track:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.post-gallery-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.post-gallery--multiple .post-gallery-slide {
+  aspect-ratio: 4 / 3;
+  max-height: 600px;
+}
+.post-gallery--multiple .post-image {
+  height: 100%;
+}
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.gallery-previous {
+  left: 10px;
+}
+.gallery-next {
+  right: 10px;
+}
+.post-gallery-stage:focus-within .gallery-arrow:not(:disabled) {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) {
+  .post-gallery-stage:hover .gallery-arrow:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.gallery-pagination,
+.gallery-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-pagination {
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+.gallery-dots button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.gallery-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.gallery-dots [aria-current="true"] span {
+  background: var(--accent);
+  transform: scale(1.4);
+}
+.upload-selection {
+  overflow-wrap: anywhere;
+}
 .lineup-match-meta {
   display: flex;
   align-items: center;

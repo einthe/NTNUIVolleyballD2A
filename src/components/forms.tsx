@@ -47,17 +47,19 @@ export function ActionForm({
   className,
   auth = false,
   onSuccess,
+  submitAction,
 }: {
   children: ReactNode;
   className?: string;
   auth?: boolean;
   onSuccess?: () => void;
+  submitAction?: (previous: ActionState, form: FormData) => Promise<ActionState>;
 }) {
   const router = useRouter();
   const client = useContext(QueryClientContext);
   const access = useContext(TeamContext);
   const [state, action] = useActionState<ActionState, FormData>(async (previous, form) => {
-    const result = await (auth ? authAction : mutate)(previous, form);
+    const result = await (submitAction ?? (auth ? authAction : mutate))(previous, form);
     if (auth && result.destination) {
       leaveAuthContext(result.destination);
       return result;

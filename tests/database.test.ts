@@ -750,6 +750,48 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
       expect((await sql("select * from storage.objects")).rows).toHaveLength(1);
     });
   });
+  it("keeps galleries ordered, private, capped and idempotent on upload retries", async () => {
+    const galleryPost = await asUser(player, () => rpc("save_post", postInput));
+    const input = (n: number) => ({
+      post_id: galleryPost,
+      storage_path: `${player}/gallery-${n}.webp`,
+      mime_type: "image/webp",
+      size_bytes: 100,
+    });
+    for (let n = 0; n < 11; n++) {
+      await sql(
+        "insert into storage.objects(bucket_id,name,owner_id) values('post-images',$1,$2)",
+        [input(n).storage_path, player],
+      );
+    }
+    await asUser(other, () =>
+      expect(rpc("attach_media", input(0))).rejects.toThrow("not_authorized"),
+    );
+    const first = await asUser(player, () => rpc("attach_media", input(0)));
+    expect(await asUser(player, () => rpc("attach_media", input(0)))).toBe(first);
+    for (let n = 1; n < 10; n++) await asUser(player, () => rpc("attach_media", input(n)));
+    await asUser(player, () =>
+      expect(rpc("attach_media", input(10))).rejects.toThrow("too_many_post_images"),
+    );
+    const rows = (
+      await sql("select storage_path from public.post_media where post_id=$1 order by sort_order", [
+        galleryPost,
+      ])
+    ).rows;
+    expect(rows.map((row) => (row as { storage_path: string }).storage_path)).toEqual(
+      Array.from({ length: 10 }, (_, n) => input(n).storage_path),
+    );
+    await asUser(disabled, async () =>
+      expect(
+        (await sql("select * from public.post_media where post_id=$1", [galleryPost])).rows,
+      ).toHaveLength(0),
+    );
+    await asUser(player, () => sql("select public.remove_media($1)", [first]));
+    await asUser(player, () => rpc("attach_media", input(10)));
+    expect(
+      (await sql("select * from public.post_media where post_id=$1", [galleryPost])).rows,
+    ).toHaveLength(10);
+  });
   it("does not expose internal notification/auth trigger functions as RPCs", async () => {
     await asUser(player, () =>
       expect(

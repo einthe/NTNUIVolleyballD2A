@@ -22,7 +22,9 @@ The deployed application requires Supabase configuration and never exposes demo 
 
 ### Post and lineup fixes
 
-The feed crash was caused by treating `post_media` as an array. Its unique `post_id` relationship makes Supabase return one object or `null`. Feed cards, post details, and editing now handle that shape. Existing posts and images are preserved; these fixes require an app deployment, **not a database reset or a new migration**.
+Post cards support both older cached single-image records and the current multi-image gallery. Apply `202609230002_post_gallery.sql` with `npx supabase db push` before deploying the gallery update; existing images are preserved. Restarting the local demo applies it automatically.
+
+Posts accept up to 10 private JPEG, PNG or WebP images, with a limit of 3 MB per image (or a lower configured `MAX_IMAGE_SIZE_MB`). Images are uploaded individually to stay below Vercel's request limit, validated and converted to WebP on the server. A failed upload keeps the post and completed images; retrying does not duplicate them. Galleries use hover arrows on desktop, native swipe on mobile, keyboard arrows and direct image selectors. The author/admin can append images when editing or remove the current image from the post detail view. Browser and home-screen icons use a black-and-white D2A monogram.
 
 Coaches and administrators can start from **Kampoppstilling** on the feed or schedule, select a match, then save a draft or publish. Publishing adds the lineup to the feed. Players cannot access the editor. Failed uploads retain the saved post ID so retrying does not create duplicates. Feed sections have independent error boundaries, and retry refetches their content.
 

@@ -5,6 +5,7 @@ import type { Post, Profile } from "@/lib/domain";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/server/actions", () => ({ mutate: vi.fn() }));
+vi.mock("@/server/post-images", () => ({ uploadPostImage: vi.fn() }));
 vi.mock("@/server/auth-actions", () => ({ authAction: vi.fn() }));
 
 const profile: Profile = {
@@ -29,14 +30,17 @@ const post = {
   secondary_role_context_key: null,
   secondary_role_context_label_snapshot: null,
 };
-describe("PostgREST one-to-one post attachment rendering", () => {
+describe("Post gallery and legacy attachment rendering", () => {
   for (const attachment of [
     null,
     { id: "00000000-0000-4000-a000-000000000003", alt_text: "Laget" },
+    [],
+    [
+      { id: "00000000-0000-4000-a000-000000000003", alt_text: "Laget" },
+      { id: "00000000-0000-4000-a000-000000000004", alt_text: "Trening" },
+    ],
   ]) {
     it(`renders the feed, detail and edit form when post_media is ${attachment ? "an object" : "null"}`, () => {
-      // The UNIQUE(post_id) constraint makes PostgREST return an object or null,
-      // not an array. This is the actual wire shape from the production schema.
       const data = { ...post, post_media: attachment } as unknown as Post;
       expect(renderToStaticMarkup(<PostCard post={data} profile={profile} />)).toContain(
         post.title,
@@ -46,7 +50,12 @@ describe("PostgREST one-to-one post attachment rendering", () => {
       );
       const form = renderToStaticMarkup(<PostForm post={data} roles={[]} />);
       expect(form).toContain("Lagre endringer");
-      expect(form.includes('name="image"')).toBe(!attachment);
+      expect(form).toContain('name="image"');
+      expect(form).toContain('multiple=""');
+      const card = renderToStaticMarkup(<PostCard post={data} profile={profile} />);
+      expect(card.includes('aria-label="Neste bilde"')).toBe(
+        Array.isArray(attachment) && attachment.length > 1,
+      );
     });
   }
 });

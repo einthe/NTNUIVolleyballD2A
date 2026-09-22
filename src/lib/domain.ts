@@ -181,8 +181,7 @@ export type Post = {
   edited_at: string | null;
   updated_at: string;
   lineup_id: string | null;
-  // UNIQUE(post_media.post_id) makes this a to-one PostgREST embedding.
-  post_media: { id: string; alt_text: string } | null;
+  post_media: import("./post-media").PostMedia[] | import("./post-media").PostMedia | null;
 };
 export type Notification = {
   id: string;

@@ -2,7 +2,6 @@
 import { eventDateLabel } from "@/lib/event-dates";
 import { useState, useId, useContext, type CSSProperties } from "react";
 import { TeamContext } from "./team-provider";
-/* eslint-disable @next/next/no-img-element -- Private authenticated media must bypass shared optimizer caches. */
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, ImagePlus, Pencil, ShieldCheck } from "lucide-react";
 import {
@@ -20,7 +19,9 @@ import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
 import { DiscussionCounts } from "./discussion-counts";
 import { LinkedText } from "./linked-text";
-import { imageWidths } from "@/lib/image-variants";
+import { PostGallery } from "./post-gallery";
+import { postImages, maxPostImages, maxPostImageMB } from "@/lib/post-media";
+import { submitPost } from "@/lib/submit-post";
 export function PostCard({
   post,
   profile,
@@ -38,7 +39,7 @@ export function PostCard({
     profile.base_role === "admin" ||
     (post.post_type === "normal" && profile.id === post.author_user_id);
   const Heading = detail ? "h1" : "h2";
-  const media = post.post_media;
+  const media = postImages(post.post_media);
   return (
     <article
       style={
@@ -105,35 +106,15 @@ export function PostCard({
             </Link>
           </>
         )}
-        {media && (
-          <div className="post-image-wrap" key={media.id}>
-            {/* Private authenticated endpoint; bypass public image optimization caches. */}
-            <img
-              key={responsiveImages ? "responsive" : "full"}
-              className="post-image"
-              src={`/media/${media.id}${responsiveImages ? "" : "?w=2400"}`}
-              srcSet={
-                responsiveImages
-                  ? imageWidths.post
-                      .map((width) => `/media/${media.id}?w=${width} ${width}w`)
-                      .join(", ")
-                  : undefined
-              }
-              sizes={
-                !responsiveImages
-                  ? undefined
-                  : detail
-                    ? "(max-width: 760px) calc(100vw - 82px), (max-width: 1190px) min(742px, calc(100vw - 304px)), min(742px, calc(100vw - 356px))"
-                    : "(max-width: 760px) calc(100vw - 82px), (max-width: 980px) calc(100vw - 304px), (max-width: 1190px) calc(100vw - 569px), (max-width: 1499px) calc(100vw - 668px), min(974px, calc(100vw - 700px))"
-              }
-              decoding="async"
-              alt={media.alt_text || `Bilde til innlegget ${post.title}`}
-              loading="lazy"
-            />
-            {detail && editable && (
-              <DeleteButton action="remove-media" id={media.id} label="Fjern bilde" />
-            )}
-          </div>
+        {media.length > 0 && (
+          <PostGallery
+            key={media.map((item) => item.id).join(",")}
+            images={media}
+            title={post.title}
+            detail={detail}
+            editable={editable}
+            responsiveImages={responsiveImages}
+          />
         )}
       </div>
       <footer className="post-footer">
@@ -162,7 +143,7 @@ export function PostForm({ post: initialPost, roles }: { post?: Post; roles: Sec
   const bodyLabel = useId();
   const access = useContext(TeamContext);
   return (
-    <ActionForm className="card editor form-stack">
+    <ActionForm className="card editor form-stack" submitAction={submitPost}>
       <input type="hidden" name="action" value="post" />
       {post && (
         <>
@@ -208,14 +189,18 @@ export function PostForm({ post: initialPost, roles }: { post?: Post; roles: Sec
           </small>
         </label>
       )}
-      {!post?.post_media && (
+      {postImages(post?.post_media).length < maxPostImages && (
         <fieldset className="upload-field">
           <legend>
-            <ImagePlus size={18} /> Legg ved bilde <span className="muted">(valgfritt)</span>
+            <ImagePlus size={18} /> Legg ved bilder <span className="muted">(valgfritt)</span>
           </legend>
-          <ImageUpload maxMB={access?.imageLimitMB ?? 3} />
+          <ImageUpload
+            maxMB={Math.min(maxPostImageMB, access?.imageLimitMB ?? 3)}
+            multiple
+            maxFiles={maxPostImages - postImages(post?.post_media).length}
+          />
           <label>
-            Beskriv bildet
+            Beskriv bildene
             <input
               name="alt_text"
               maxLength={300}

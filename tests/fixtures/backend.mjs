@@ -32,7 +32,7 @@ export async function startLocalBackend({
     columns.get(row.table_name).add(row.column_name);
   }
   // Infer embedding direction/cardinality from the actual migration's constraints.
-  // In particular, post_media is to-one due to UNIQUE(post_id).
+  // post_media is to-many; older fixtures used UNIQUE(post_id).
   const relations = (
     await db.query(`select c.conname, c.conrelid::regclass::text as source,
  c.confrelid::regclass::text as target, a.attname as source_key, b.attname as target_key,

@@ -100,7 +100,7 @@ export async function getPosts(page = 1, kind?: string, account?: Profile) {
   const db = await createClient();
   let query = db
     .from("posts")
-    .select("*,post_media(id,alt_text)", { count: "exact" })
+    .select("*,post_media(id,alt_text,sort_order)", { count: "exact" })
     .order("created_at", { ascending: false })
     .order("id", { ascending: false });
   if (kind === "lineup") query = query.eq("post_type", "lineup");
@@ -124,7 +124,7 @@ export async function getPost(id: string, account?: Profile) {
   const db = await createClient();
   const { data, error } = await db
     .from("posts")
-    .select("*,post_media(id,alt_text)")
+    .select("*,post_media(id,alt_text,sort_order)")
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error("Kunne ikke hente innlegget.");

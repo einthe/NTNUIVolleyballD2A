@@ -198,70 +198,10 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
         expected_updated_at:
           savedPost.savedPostUpdatedAt || text("expected_updated_at") || undefined,
       });
-      const file = form.get("image");
-      let image: { buffer: Buffer; mime: string; extension: string } | undefined;
-      if (file instanceof File && file.size) {
-        imageSchema.parse({ type: file.type, size: file.size });
-        const maxSize =
-          Math.min(10, Math.max(1, Number(process.env.MAX_IMAGE_SIZE_MB) || 3)) * 1024 * 1024;
-        if (file.size > maxSize)
-          return {
-            ...savedPost,
-            change,
-            error: `Bildet er for stort. Maksimal størrelse er ${maxSize / 1024 / 1024} MB.`,
-          };
-        const source = Buffer.from(await file.arrayBuffer());
-        const metadata = await sharp(source, { limitInputPixels: 40_000_000 }).metadata();
-        if (!["jpeg", "png", "webp"].includes(metadata.format ?? ""))
-          return { ...savedPost, error: "Velg et gyldig JPEG-, PNG- eller WebP-bilde." };
-        const buffer = await sharp(source, { limitInputPixels: 40_000_000 })
-          .rotate()
-          .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 85 })
-          .toBuffer();
-        image = { buffer, mime: "image/webp", extension: "webp" };
-      }
-      const alt = z.string().max(300).parse(text("alt_text"));
       const id = await rpc("save_post", { data: input });
       change.postId = id;
-      if (image) {
-        // If Storage fails after the text commits, retry this same post instead
-        // of inserting a duplicate. RPC ownership and stale-edit checks still apply.
-        const { data: saved } = await db.from("posts").select("updated_at").eq("id", id).single();
-        savedPost = { savedPostId: id, savedPostUpdatedAt: saved?.updated_at };
-        const path = `${profile.id}/${crypto.randomUUID()}.${image.extension}`;
-        const uploaded = await db.storage
-          .from("post-images")
-          .upload(path, image.buffer, { contentType: image.mime, upsert: false });
-        if (uploaded.error) {
-          return {
-            ...savedPost,
-            change,
-            error:
-              "Teksten er lagret, men bildet kunne ikke lastes opp. Prøv igjen, eller åpne det lagrede innlegget.",
-          };
-        }
-        try {
-          await rpc("attach_media", {
-            data: {
-              post_id: id,
-              storage_path: path,
-              mime_type: image.mime,
-              size_bytes: image.buffer.length,
-              alt_text: alt,
-            },
-          });
-          await warmImageVariants(db, "post", path, image.buffer);
-        } catch {
-          await db.storage.from("post-images").remove([path]);
-          return {
-            ...savedPost,
-            change,
-            error:
-              "Innlegget ble lagret, men bildet kunne ikke knyttes til det. Åpne innlegget fra feeden for å prøve igjen.",
-          };
-        }
-      }
+      const { data: saved } = await db.from("posts").select("updated_at").eq("id", id).single();
+      savedPost = { savedPostId: id, savedPostUpdatedAt: saved?.updated_at };
       destination = `/posts/${id}`;
     } else if (kind === "volunteer_work_points") {
       change.id = await rpc("set_volunteer_work_points", {
@@ -379,5 +319,5 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       return { error: error.message };
     return { ...savedPost, error: friendlyError(error instanceof Error ? error.message : "") };
   }
-  return { success: "Endringen er lagret.", destination, change };
+  return { ...savedPost, success: "Endringen er lagret.", destination, change };
 }

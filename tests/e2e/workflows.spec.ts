@@ -35,7 +35,7 @@ test("player can publish, revisit, edit and delete image/text posts without brea
   await page.getByRole("link", { name: "Nytt innlegg", exact: true }).click();
   await postFields(page, title);
   await page.locator('input[name="image"]').setInputFiles(await picture());
-  await page.getByLabel("Beskriv bildet").fill("Laget på trening");
+  await page.getByLabel("Beskriv bildene").fill("Laget på trening");
   await page.getByRole("button", { name: "Publiser innlegg" }).click();
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
   const postUrl = page.url();
