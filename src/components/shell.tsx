@@ -19,6 +19,14 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { baseRoles } from "@/lib/domain";
 import { PaletteSelector } from "./palette-selector";
+import {
+  CardColorSelector,
+  CardHighlightSelector,
+  HighContrastToggle,
+  useCardColors,
+  useCardHighlighting,
+  useHighContrast,
+} from "./card-highlighting";
 import { SignOutButton } from "./sign-out-button";
 import { useTeam } from "./team-provider";
 import { useQuery } from "@tanstack/react-query";
@@ -40,6 +48,9 @@ const shortcuts = [
 ];
 export function Shell({ children }: { children: ReactNode }) {
   const { profile, scope } = useTeam();
+  const [cardHighlighting, setCardHighlighting] = useCardHighlighting(profile.id);
+  const [cardColors, setCardColors] = useCardColors(profile.id);
+  const [highContrast, setHighContrast] = useHighContrast(profile.id);
   const notificationsQuery = useQuery(queries.notifications(scope));
   const notifications = notificationsQuery.data ?? [];
   const pathname = usePathname();
@@ -99,7 +110,12 @@ export function Shell({ children }: { children: ReactNode }) {
     };
   }, [menuOpen]);
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      data-card-highlighting={cardHighlighting}
+      data-card-colors={cardColors}
+      data-high-contrast={highContrast}
+    >
       <a className="skip-link" href="#main">
         Hopp til innhold
       </a>
@@ -239,6 +255,12 @@ export function Shell({ children }: { children: ReactNode }) {
               </summary>
               <div className="dropdown account-dropdown">
                 <PaletteSelector />
+                <HighContrastToggle
+                  enabled={highContrast === "on"}
+                  onChange={(enabled) => setHighContrast(enabled ? "on" : "off")}
+                />
+                <CardHighlightSelector value={cardHighlighting} onChange={setCardHighlighting} />
+                <CardColorSelector value={cardColors} onChange={setCardColors} />
                 <Link
                   href="/profile"
                   onClick={(event) =>

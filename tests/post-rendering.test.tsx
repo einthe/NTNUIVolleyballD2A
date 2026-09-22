@@ -34,12 +34,14 @@ describe("PostgREST one-to-one post attachment rendering", () => {
     null,
     { id: "00000000-0000-4000-a000-000000000003", alt_text: "Laget" },
   ]) {
-    it(`renders the feed, detail and edit form when post_media is ${attachment ? "an object" : "null"}`, async () => {
+    it(`renders the feed, detail and edit form when post_media is ${attachment ? "an object" : "null"}`, () => {
       // The UNIQUE(post_id) constraint makes PostgREST return an object or null,
       // not an array. This is the actual wire shape from the production schema.
       const data = { ...post, post_media: attachment } as unknown as Post;
-      expect(renderToStaticMarkup(await PostCard({ post: data, profile }))).toContain(post.title);
-      expect(renderToStaticMarkup(await PostCard({ post: data, profile, detail: true }))).toContain(
+      expect(renderToStaticMarkup(<PostCard post={data} profile={profile} />)).toContain(
+        post.title,
+      );
+      expect(renderToStaticMarkup(<PostCard post={data} profile={profile} detail />)).toContain(
         "Slett innlegg",
       );
       const form = renderToStaticMarkup(<PostForm post={data} roles={[]} />);

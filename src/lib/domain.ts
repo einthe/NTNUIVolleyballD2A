@@ -354,5 +354,6 @@ export const eventTone: Record<EventType, string> = {
 };
 
 export function eventHighlight(event: TeamEvent) {
-  return event.creator_base_role_snapshot === "coach" ? "coach" : eventTone[event.event_type];
+  const tone = event.creator_base_role_snapshot === "coach" ? "coach" : eventTone[event.event_type];
+  return tone === "muted" ? "neutral-highlight" : tone;
 }

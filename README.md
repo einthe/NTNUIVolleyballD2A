@@ -62,7 +62,7 @@ Open **http://127.0.0.1:3000**. No Docker, Supabase project or `.env.local` is n
 | `admin@demo.test`    | Administration, approvals, notifications and all content           |
 | `coach@demo.test`    | Matches, practices, player positions and lineup drafts/publication |
 | `player@demo.test`   | Regular player and captain; posts and read access                  |
-| `theo@demo.test`     | Botsjef; fine types and fines for players/coaches            |
+| `theo@demo.test`     | Botsjef; fine types and fines for players/coaches                  |
 | `pending@demo.test`  | Pending approval screen                                            |
 | `disabled@demo.test` | Disabled account screen                                            |
 
@@ -90,7 +90,7 @@ Edit `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_URL`             | Project URL from Supabase → Project Settings → API.                                                                                  |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_…`), or the local/legacy anon key. Safe for the browser; RLS protects data.                         |
 | `NEXT_PUBLIC_SITE_URL`                 | Exact app origin, e.g. `http://localhost:3000` or `https://ntnuivolleyballd2a.no`. Used in auth redirects.                           |
-| `NEXT_PUBLIC_GIPHY_API_KEY`          | GIPHY browser API key; required for meme reactions. Set in Vercel Production (and Preview if used) before building. |
+| `NEXT_PUBLIC_GIPHY_API_KEY`            | GIPHY browser API key; required for meme reactions. Set in Vercel Production (and Preview if used) before building.                  |
 | `MAX_IMAGE_SIZE_MB`                    | Optional application upload limit; defaults to 3 MB to fit Vercel request limits; capped at the bucket's 10 MB limit on other hosts. |
 
 The application **does not need a service-role key**. Never put one in `NEXT_PUBLIC_*`, source files, or browser code. Hosted Supabase connection details are not included in this repository.
@@ -235,7 +235,7 @@ Apply `supabase/migrations/202609200003_volleyball_matches.sql` and `supabase/mi
 
 ## Deliberate V1 choices
 
-- Skog is the default green/lime palette. Alternate theme tokens live in `src/app/palettes.css`, with palette names in `src/lib/palettes.ts`; role/event labels and colors are centralized in `src/lib/domain.ts`. Only the palette preference is persisted to localStorage; private query data is not.
+- Skog is the default green/lime palette. Alternate theme tokens live in `src/app/palettes.css`, with palette names in `src/lib/palettes.ts`; role/event labels and colors are centralized in `src/lib/domain.ts`. The account menu also offers **Fremheving av innlegg og hendelser**: **Standard** preserves the subtle highlighting, while **Hele kortet** uses an opaque, subtle responsibility or coach tint across the entire card, blended with the selected palette’s panel color. **Farger på innlegg og hendelser** independently switches between **Myke** (the original soft colors) and **Klassiske** (clearer red, blue, green, yellow and other familiar hues), with either highlighting style. **Høy kontrast** turns normal and muted text white, darkens palette surfaces, and strengthens borders while retaining responsibility and accent colors. Normal posts keep their existing style. These preferences are saved separately for each account in this browser and synchronized between tabs. Palette and highlighting preferences use localStorage; private query data is not persisted there.
 - Local fonts are bundled with the app. No third-party font requests or external image services are required.
 - `schedule_events.location` is the canonical venue; there is no redundant match venue field.
 - Event category is immutable after creation. Delete/recreate an incorrectly categorized event if it has no lineup history.
