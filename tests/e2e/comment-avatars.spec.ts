@@ -25,6 +25,7 @@ test("post and event comments and replies show current private profile photos", 
   targets.push(page.url());
   for (const url of targets) {
     await page.goto(url);
+    await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
     await page.getByRole("textbox", { name: /^Kommenter / }).fill("Kommentar uten profilbilde");
     await page.getByRole("button", { name: "Publiser kommentar", exact: true }).click();
     const root = page.locator(".comment-threads > li > article").first();

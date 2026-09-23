@@ -38,23 +38,26 @@ export function GiphyReactions({
   userId,
   reactTo,
   busy,
+  collapsible = true,
 }: {
   reactions: MemeReaction[];
   userId: string;
   reactTo: ReactTo;
   busy: boolean;
+  collapsible?: boolean;
 }) {
   const [picker, setPicker] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const contentId = useId();
+  const titleId = useId();
   const groups = new Map<string, MemeReaction[]>();
   for (const reaction of reactions)
     groups.set(reaction.giphy_id, [...(groups.get(reaction.giphy_id) ?? []), reaction]);
   const idsKey = [...groups.keys()].sort().join(",");
   return (
-    <section aria-labelledby="reactions-title" className="discussion-reactions">
+    <section aria-labelledby={titleId} className="discussion-reactions">
       <div className="section-title">
-        <h2 id="reactions-title">Reaksjoner</h2>
+        <h2 id={titleId}>Reaksjoner</h2>
         <div className="reaction-section-actions">
           {expanded && (
             <button
@@ -66,21 +69,23 @@ export function GiphyReactions({
               Reager med et meme
             </button>
           )}
-          <button
-            type="button"
-            className="text-button reaction-toggle"
-            aria-expanded={expanded}
-            aria-controls={contentId}
-            disabled={busy}
-            onClick={() => setExpanded((value) => !value)}
-          >
-            {expanded ? (
-              <ChevronUp size={16} aria-hidden="true" />
-            ) : (
-              <ChevronDown size={16} aria-hidden="true" />
-            )}
-            {expanded ? "Skjul reaksjoner" : "Vis reaksjoner"}
-          </button>
+          {collapsible && (
+            <button
+              type="button"
+              className="text-button reaction-toggle"
+              aria-expanded={expanded}
+              aria-controls={contentId}
+              disabled={busy}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? (
+                <ChevronUp size={16} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={16} aria-hidden="true" />
+              )}
+              {expanded ? "Skjul reaksjoner" : "Vis reaksjoner"}
+            </button>
+          )}
         </div>
       </div>
       <div id={contentId} hidden={!expanded}>

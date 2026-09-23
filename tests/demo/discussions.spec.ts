@@ -12,6 +12,7 @@ test("the local demo has threaded discussions and works without a Giphy key", as
   await expect(page.getByText("Jeg blir også med.", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Reager med et meme" })).toBeDisabled();
   await expect(page.getByText("Memes er ikke tilgjengelige ennå.")).toBeVisible();
+  await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
     .fill(`Kommentar uten API-nøkkel ${testInfo.project.name}`);

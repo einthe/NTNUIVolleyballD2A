@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { login, provision } from "./support";
+import AxeBuilder from "@axe-core/playwright";
 
 async function giphy(page: Page) {
   const searches: string[] = [];
@@ -45,11 +46,97 @@ async function newPost(page: Page, name: string) {
   await page.getByLabel("Innlegg", { exact: true }).fill("Et innlegg med diskusjon.");
   await page.getByRole("button", { name: "Publiser innlegg", exact: true }).click();
   await expect(page.getByRole("heading", { name: `Diskusjon ${name}`, exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("textbox", { name: "Kommenter innlegget", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skriv kommentar", exact: true })).toBeVisible();
   return page.url();
 }
+
+test("feed cards expand comments and reactions independently of opening the post", async ({
+  page,
+}, info) => {
+  test.skip(!process.env.E2E_LOCAL_ADAPTER, "Uses an isolated fake browser API key");
+  await giphy(page);
+  const account = await provision("player");
+  await login(page, account);
+  const firstUrl = await newPost(page, account.name);
+  await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
+    .fill("Eksisterende kommentar");
+  await page.getByRole("button", { name: "Publiser kommentar", exact: true }).click();
+  await expect(page.getByText("Eksisterende kommentar", { exact: true })).toBeVisible();
+  await newPost(page, `${account.name} andre`);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/team/discussion?")) requests.push(request.url());
+  });
+  await page.goto("/feed");
+  const card = page
+    .locator(".post-card")
+    .filter({ has: page.getByRole("heading", { name: `Diskusjon ${account.name}`, exact: true }) });
+  const second = page.locator(".post-card").filter({
+    has: page.getByRole("heading", { name: `Diskusjon ${account.name} andre`, exact: true }),
+  });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("1 kommentar", { exact: true })).toBeVisible();
+  expect(requests).toHaveLength(0);
+  await expect(card.getByRole("link", { name: "Se innlegg" })).toHaveCount(0);
+  await card.getByRole("button", { name: "Vis kommentarer", exact: true }).click();
+  await expect(page).toHaveURL(/\/feed$/);
+  await expect(card.getByText("Eksisterende kommentar", { exact: true })).toBeVisible();
+  await expect(card.getByRole("textbox", { name: "Kommenter innlegget" })).toHaveCount(0);
+  await card.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
+  await card
+    .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
+    .fill("Skrevet fra feeden");
+  await card.getByRole("button", { name: "Publiser kommentar", exact: true }).click();
+  await expect(card.getByText("Skrevet fra feeden", { exact: true })).toBeVisible();
+  await expect(card.getByRole("textbox", { name: "Kommenter innlegget" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Skriv kommentar", exact: true })).toBeFocused();
+  await expect(card.getByText("2 kommentarer", { exact: true })).toBeVisible();
+  const root = card.locator(".comment-threads > li > article").first();
+  await root.getByRole("button", { name: "Svar", exact: true }).click();
+  await root
+    .getByRole("textbox", { name: `Svar til ${account.name}`, exact: true })
+    .fill("Svar fra feeden");
+  await root.getByRole("button", { name: "Publiser svar", exact: true }).click();
+  await expect(card.getByText("Svar fra feeden", { exact: true })).toBeVisible();
+  await second.getByRole("button", { name: "Vis kommentarer", exact: true }).click();
+  await expect(second.getByRole("button", { name: "Skriv kommentar", exact: true })).toBeVisible();
+  await expect(second.getByRole("textbox", { name: "Kommenter innlegget" })).toHaveCount(0);
+  expect(
+    (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+  ).toEqual([]);
+  await card.getByRole("button", { name: "Vis reaksjoner", exact: true }).click();
+  await expect(card.getByRole("textbox", { name: "Kommenter innlegget" })).toHaveCount(0);
+  await card.getByRole("button", { name: "Reager med et meme", exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "Velg et meme" });
+  await picker.getByRole("button", { name: "Reager med Volleyball celebration" }).click();
+  await expect(card.getByText("1 reaksjon", { exact: true })).toBeVisible();
+  await expect(
+    card.locator(".reaction-people").getByText(account.name, { exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/feed$/);
+  await card.screenshot({ path: info.outputPath("feed-reactions.png") });
+  await card.getByRole("button", { name: "Skjul reaksjoner", exact: true }).click();
+  await expect(card.locator(".reaction-gallery img")).toHaveCount(0);
+  // Selecting text must not navigate, while a normal body click opens the post.
+  await card
+    .locator(".post-body")
+    .first()
+    .evaluate((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  await expect(page).toHaveURL(/\/feed$/);
+  await page.evaluate(() => window.getSelection()?.removeAllRanges());
+  await card.locator(".post-body").first().click();
+  await expect(page).toHaveURL(firstUrl);
+  await expect(page.getByText("Svar fra feeden", { exact: true })).toBeVisible();
+});
 
 test("post comments support replies, editing, links, deletion and persistent thread context", async ({
   page,
@@ -65,6 +152,7 @@ test("post comments support replies, editing, links, deletion and persistent thr
   await expect(card).toBeVisible();
   await expect(card.locator(".discussion-counts")).toHaveCount(0);
   await card.getByRole("link", { name: `Diskusjon ${account.name}`, exact: true }).click();
+  await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
     .fill("Første kommentar https://example.com/info");
@@ -171,9 +259,7 @@ test("Giphy search, pagination, error recovery, reaction counts and removal work
   await expect(hide).toHaveAttribute("aria-expanded", "true");
   await hide.click();
   await expect(page.locator(".reaction-gallery img")).toHaveCount(0);
-  await expect(
-    page.getByRole("textbox", { name: "Kommenter innlegget", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skriv kommentar", exact: true })).toBeVisible();
   const show = page.getByRole("button", { name: "Vis reaksjoner", exact: true });
   await expect(show).toHaveAttribute("aria-expanded", "false");
   await show.click();
@@ -237,6 +323,7 @@ test("ordinary members can discuss events, cannot moderate others, and comments 
   await page.getByRole("button", { name: "Opprett hendelse", exact: true }).click();
   await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
   const url = page.url();
+  await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Kommenter hendelsen", exact: true })
     .fill("Trenerens kommentar");
@@ -267,6 +354,7 @@ test("ordinary members can discuss events, cannot moderate others, and comments 
   await memberPage.route("https://api.giphy.com/v1/gifs**", (route) => route.abort());
   await memberPage.reload();
   await expect(memberPage.getByText("Reaksjonsbildene kunne ikke hentes.")).toBeVisible();
+  await memberPage.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
   await memberPage
     .getByRole("textbox", { name: "Kommenter hendelsen", exact: true })
     .fill("Kommentar uten Giphy");

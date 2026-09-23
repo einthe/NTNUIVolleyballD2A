@@ -9,7 +9,7 @@ A private, single-team web app built from `ntnuivolleyballd2a-codex-instructions
 - Paginated posts, historical author/role snapshots, own-post editing, admin moderation, and optional private images with descriptions.
 - **Bøter**: ranked totals and expandable histories for players/coaches, a fine-type catalog for everyone with editing for **Botsjef** and admins. Includes exact NOK amounts, historical prices and annulment. See [fine system setup and demo](docs/fines.md) for the required migrations.
 - Team-wide automatic image sizing can be toggled under **Administrasjon → Bildeinnstillinger**. Apply `supabase/migrations/202609210001_image_settings.sql` before using the toggle in production; the demo applies it on restart. Private caching and access checks remain enabled in both modes.
-- Threaded comments and GIPHY meme reactions on post/event details, with author editing and admin moderation. See [discussion setup](docs/discussions.md) for the required migration and API key.
+- Threaded comments and GIPHY meme reactions on post/event details and expandable post feed cards, with author editing and admin moderation. Click a post's main area to open it; links and gallery controls remain independent. See [discussion setup](docs/discussions.md) for the required migration and API key.
 - Upcoming and archived events, category permissions, match opponents/results, and structured volunteer assignments. No local attendance/RSVP system.
 - A roster without email addresses or admin accounts; coach/admin position editing.
 - Incomplete lineup drafts, a responsive court and separate libero, immutable versioned snapshots, accessible player lists, publication to the match and feed, and revision history.

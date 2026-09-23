@@ -918,6 +918,45 @@ small {
 .post-footer a:hover {
   color: var(--accent);
 }
+.post-card--linked {
+  cursor: pointer;
+}
+.post-card--linked [data-post-interactive] {
+  cursor: auto;
+}
+.post-card--linked .post-footer {
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.post-discussion-actions {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+}
+.post-discussion-actions .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  color: var(--muted);
+}
+.post-discussion-actions .text-button[aria-expanded="true"],
+.post-discussion-actions .text-button:hover {
+  color: var(--accent);
+}
+.post-card .discussion-inline,
+.inline-discussion-loading {
+  border-top: 1px solid var(--border);
+  margin: 0 23px;
+  padding: 20px 0;
+}
+.discussion-inline .discussion-comments {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
 .post-delete {
   padding: 0 23px 18px;
 }
@@ -3163,7 +3202,6 @@ legend {
   border-left-color: var(--coach);
 }
 
-/* Discussions are rendered only on post and event detail pages. */
 .discussion {
   padding: 28px;
   margin-top: 24px;

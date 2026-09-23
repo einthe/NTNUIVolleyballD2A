@@ -37,6 +37,7 @@ export function PostGallery({
     <div
       className={`post-image-wrap post-gallery ${multiple ? "post-gallery--multiple" : ""}`}
       role="region"
+      data-post-interactive
       aria-label={`Bilder til ${title}`}
       aria-roledescription="bildekarusell"
     >

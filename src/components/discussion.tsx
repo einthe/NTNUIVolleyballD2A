@@ -15,7 +15,19 @@ type Save = (
   action: "comment" | "delete" | "reaction",
   data: Record<string, unknown>,
 ) => Promise<{ error?: string }>;
-export function Discussion({ target }: { target: DiscussionTarget }) {
+export function Discussion({
+  target,
+  section = "all",
+  embedded = false,
+}: {
+  target: DiscussionTarget;
+  section?: "all" | "comments" | "reactions";
+  embedded?: boolean;
+}) {
+  const commentsTitle = useId();
+  const composerId = useId();
+  const composerButton = useRef<HTMLButtonElement>(null);
+  const [writing, setWriting] = useState(false);
   const { scope, profile } = useTeam();
   const client = useQueryClient();
   const options = queries.discussion(scope, target);
@@ -40,74 +52,107 @@ export function Discussion({ target }: { target: DiscussionTarget }) {
     }
   };
   return (
-    <div className="card discussion" aria-label="Kommentarer og reaksjoner">
+    <div
+      className={embedded ? "discussion discussion-inline" : "card discussion"}
+      aria-label="Kommentarer og reaksjoner"
+    >
       <QueryState query={query} title="Diskusjonen kunne ikke hentes">
         {(data) => (
           <>
-            <GiphyReactions
-              reactions={data.reactions}
-              userId={profile.id}
-              busy={reactionBusy}
-              reactTo={async (id, active) => {
-                if (reactionLock.current) return false;
-                reactionLock.current = true;
-                setReactionBusy(true);
-                setReactionError(undefined);
-                try {
-                  const result = await save("reaction", { giphy_id: id, active });
-                  setReactionError(result.error);
-                  return !result.error;
-                } finally {
-                  reactionLock.current = false;
-                  setReactionBusy(false);
-                }
-              }}
-            />
-            {reactionError && (
+            {section !== "comments" && (
+              <GiphyReactions
+                collapsible={!embedded}
+                reactions={data.reactions}
+                userId={profile.id}
+                busy={reactionBusy}
+                reactTo={async (id, active) => {
+                  if (reactionLock.current) return false;
+                  reactionLock.current = true;
+                  setReactionBusy(true);
+                  setReactionError(undefined);
+                  try {
+                    const result = await save("reaction", { giphy_id: id, active });
+                    setReactionError(result.error);
+                    return !result.error;
+                  } finally {
+                    reactionLock.current = false;
+                    setReactionBusy(false);
+                  }
+                }}
+              />
+            )}
+            {section !== "comments" && reactionError && (
               <p className="message error" role="alert">
                 {reactionError}
               </p>
             )}
-            <section className="discussion-comments" aria-labelledby="comments-title">
-              <h2 id="comments-title">
-                Kommentarer{" "}
-                <span className="muted">
-                  ({data.comments.filter((comment) => !comment.deleted_at).length})
-                </span>
-              </h2>
-              <CommentForm
-                save={save}
-                label={
-                  target.target_type === "post" ? "Kommenter innlegget" : "Kommenter hendelsen"
-                }
-              />
-              {!data.comments.length && <p className="muted">Ingen kommentarer ennå.</p>}
-              <ol className="comment-threads">
-                {commentThreads(data.comments)
-                  .slice(0, visible)
-                  .map((comment) => (
-                    <Comment
-                      key={comment.id}
-                      comment={comment}
+            {section !== "reactions" && (
+              <section className="discussion-comments" aria-labelledby={commentsTitle}>
+                <div className="section-title">
+                  <h2 id={commentsTitle}>
+                    Kommentarer{" "}
+                    <span className="muted">
+                      ({data.comments.filter((comment) => !comment.deleted_at).length})
+                    </span>
+                  </h2>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    ref={composerButton}
+                    aria-expanded={writing}
+                    aria-controls={composerId}
+                    onClick={() => setWriting((value) => !value)}
+                  >
+                    {writing ? "Skjul skrivefelt" : "Skriv kommentar"}
+                  </button>
+                </div>
+                <div id={composerId} hidden={!writing}>
+                  {writing && (
+                    <CommentForm
                       save={save}
-                      userId={profile.id}
-                      admin={profile.base_role === "admin"}
-                      targetLabel={
-                        target.target_type === "post" ? "Svar til innlegget" : "Svar til hendelsen"
+                      autoFocus
+                      onDone={() => {
+                        setWriting(false);
+                        composerButton.current?.focus();
+                      }}
+                      label={
+                        target.target_type === "post"
+                          ? "Kommenter innlegget"
+                          : "Kommenter hendelsen"
                       }
                     />
-                  ))}
-              </ol>
-              {commentThreads(data.comments).length > visible && (
-                <button
-                  type="button"
-                  className="button secondary"
-                  onClick={() => setVisible((n) => n + 20)}
-                >
-                  Vis flere kommentarer
-                </button>
-              )}
-            </section>
+                  )}
+                </div>
+                {!data.comments.length && <p className="muted">Ingen kommentarer ennå.</p>}
+                <ol className="comment-threads">
+                  {commentThreads(data.comments)
+                    .slice(0, visible)
+                    .map((comment) => (
+                      <Comment
+                        key={comment.id}
+                        comment={comment}
+                        save={save}
+                        userId={profile.id}
+                        admin={profile.base_role === "admin"}
+                        targetLabel={
+                          target.target_type === "post"
+                            ? "Svar til innlegget"
+                            : "Svar til hendelsen"
+                        }
+                      />
+                    ))}
+                </ol>
+                {commentThreads(data.comments).length > visible && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={() => setVisible((n) => n + 20)}
+                  >
+                    Vis flere kommentarer
+                  </button>
+                )}
+              </section>
+            )}
           </>
         )}
       </QueryState>
@@ -120,12 +165,14 @@ function CommentForm({
   parent,
   edit,
   onDone,
+  autoFocus = false,
 }: {
   save: Save;
   label: string;
   parent?: string;
   edit?: CommentThread;
   onDone?: () => void;
+  autoFocus?: boolean;
 }) {
   const fieldId = useId();
   const [body, setBody] = useState(edit?.body ?? "");
@@ -168,6 +215,7 @@ function CommentForm({
     >
       <label htmlFor={fieldId}>{label}</label>
       <textarea
+        autoFocus={autoFocus}
         id={fieldId}
         value={body}
         required

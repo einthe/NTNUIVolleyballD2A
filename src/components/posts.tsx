@@ -3,7 +3,17 @@ import { eventDateLabel } from "@/lib/event-dates";
 import { useState, useId, useContext, type CSSProperties } from "react";
 import { TeamContext } from "./team-provider";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, ImagePlus, Pencil, ShieldCheck } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  ImagePlus,
+  Pencil,
+  ShieldCheck,
+  MessageSquare,
+  Smile,
+} from "lucide-react";
 import {
   baseRoles,
   roleTone,
@@ -17,11 +27,17 @@ import { Avatar, Badge } from "./ui";
 import { Court } from "./court";
 import { ActionForm, DeleteButton, Submit } from "./forms";
 import { ImageUpload } from "./image-upload";
-import { DiscussionCounts } from "./discussion-counts";
 import { LinkedText } from "./linked-text";
 import { PostGallery } from "./post-gallery";
 import { postImages, maxPostImages, maxPostImageMB } from "@/lib/post-media";
 import { submitPost } from "@/lib/submit-post";
+const InlineDiscussion = dynamic(() => import("./discussion").then((module) => module.Discussion), {
+  loading: () => (
+    <p className="inline-discussion-loading muted" role="status">
+      Laster …
+    </p>
+  ),
+});
 export function PostCard({
   post,
   profile,
@@ -33,6 +49,11 @@ export function PostCard({
   detail?: boolean;
   lineup?: import("@/lib/domain").Lineup | null;
 }) {
+  const router = useRouter();
+  const discussionId = useId();
+  const [section, setSection] = useState<"comments" | "reactions" | null>(null);
+  const commentCount = post.discussion_counts?.comment_count ?? 0;
+  const reactionCount = post.discussion_counts?.reaction_count ?? 0;
   const responsiveImages = useContext(TeamContext)?.responsiveImages !== false;
   const revision = lineup?.lineup_revisions.find((r) => r.is_current_published);
   const editable =
@@ -42,6 +63,24 @@ export function PostCard({
   const media = postImages(post.post_media);
   return (
     <article
+      onClick={
+        detail
+          ? undefined
+          : (event) => {
+              if (
+                event.defaultPrevented ||
+                event.button !== 0 ||
+                (event.target as Element).closest(
+                  "a,button,input,textarea,select,label,summary,[data-post-interactive]",
+                ) ||
+                window.getSelection()?.isCollapsed === false
+              )
+                return;
+              if (event.metaKey || event.ctrlKey)
+                window.open(`/posts/${post.id}`, "_blank", "noopener,noreferrer");
+              else router.push(`/posts/${post.id}`);
+            }
+      }
       style={
         post.secondary_role_context_key
           ? ({
@@ -51,7 +90,7 @@ export function PostCard({
             ? ({ "--role-color": "var(--coach)" } as CSSProperties)
             : undefined
       }
-      className={`post-card card ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : post.base_role_snapshot === "coach" ? "coach-post" : ""}`}
+      className={`post-card card ${!detail ? "post-card--linked" : ""} ${post.post_type === "lineup" ? "lineup-post" : ""} ${post.secondary_role_context_key ? "role-post" : post.base_role_snapshot === "coach" ? "coach-post" : ""}`}
     >
       <header className="post-header">
         <Avatar
@@ -117,18 +156,56 @@ export function PostCard({
           />
         )}
       </div>
-      <footer className="post-footer">
-        {editable && post.post_type === "normal" ? (
-          <Link href={`/posts/${post.id}/edit`}>
-            <Pencil size={14} /> Rediger
-          </Link>
-        ) : (
-          <Link href={`/posts/${post.id}`}>
-            Se innlegg <ArrowUpRight size={14} />
-          </Link>
-        )}
-      </footer>
-      {!detail && <DiscussionCounts counts={post.discussion_counts} />}
+      {(!detail || (editable && post.post_type === "normal")) && (
+        <footer className="post-footer" data-post-interactive>
+          {!detail && (
+            <div className="post-discussion-actions">
+              <button
+                type="button"
+                className={`text-button ${commentCount ? "comment-count" : ""}`}
+                aria-label={section === "comments" ? "Skjul kommentarer" : "Vis kommentarer"}
+                aria-expanded={section === "comments"}
+                aria-controls={discussionId}
+                onClick={() => setSection(section === "comments" ? null : "comments")}
+              >
+                <MessageSquare size={15} aria-hidden="true" />
+                {commentCount
+                  ? `${commentCount} ${commentCount === 1 ? "kommentar" : "kommentarer"}`
+                  : "Kommentarer"}
+              </button>
+              <button
+                type="button"
+                className={`text-button ${reactionCount ? "meme-count" : ""}`}
+                aria-label={section === "reactions" ? "Skjul reaksjoner" : "Vis reaksjoner"}
+                aria-expanded={section === "reactions"}
+                aria-controls={discussionId}
+                onClick={() => setSection(section === "reactions" ? null : "reactions")}
+              >
+                <Smile size={15} aria-hidden="true" />
+                {reactionCount
+                  ? `${reactionCount} ${reactionCount === 1 ? "reaksjon" : "reaksjoner"}`
+                  : "Reaksjoner"}
+              </button>
+            </div>
+          )}
+          {editable && post.post_type === "normal" && (
+            <Link href={`/posts/${post.id}/edit`}>
+              <Pencil size={14} /> Rediger
+            </Link>
+          )}
+        </footer>
+      )}
+      {!detail && (
+        <div id={discussionId} data-post-interactive hidden={!section}>
+          {section && (
+            <InlineDiscussion
+              target={{ target_type: "post", target_id: post.id }}
+              section={section}
+              embedded
+            />
+          )}
+        </div>
+      )}
       {detail && editable && (
         <div className="post-delete">
           <DeleteButton action="delete-post" id={post.id} label="Slett innlegg" />
