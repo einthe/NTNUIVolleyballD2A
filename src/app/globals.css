@@ -2639,6 +2639,9 @@ legend {
   }
 }
 @media (max-width: 760px) {
+  .feed-upcoming {
+    display: none;
+  }
   .desktop-sidebar {
     display: none;
   }

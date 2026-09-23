@@ -61,9 +61,11 @@ export default function Feed() {
           </ContentBoundary>
         </div>
         <aside className="feed-aside">
-          <ContentBoundary title="Terminlisten kunne ikke hentes" href="/schedule">
-            <UpcomingEvents />
-          </ContentBoundary>
+          <div className="feed-upcoming">
+            <ContentBoundary title="Terminlisten kunne ikke hentes" href="/schedule">
+              <UpcomingEvents />
+            </ContentBoundary>
+          </div>
           <ContentBoundary title="Troppsoversikten kunne ikke hentes" href="/roster">
             <TeamSummary />
           </ContentBoundary>
