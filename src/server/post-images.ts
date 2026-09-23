@@ -46,14 +46,19 @@ export async function uploadPostImage(form: FormData): Promise<{ error?: string 
   if (lookupError) return { error: "Bildene kunne ikke hentes. Prøv igjen." };
   if (existing) return {};
   let buffer: Buffer;
+  let width: number;
+  let height: number;
   try {
     const metadata = await sharp(source, { limitInputPixels: 40_000_000 }).metadata();
     if (!["jpeg", "png", "webp"].includes(metadata.format ?? "")) throw new Error("invalid_image");
-    buffer = await sharp(source, { limitInputPixels: 40_000_000 })
+    const processed = await sharp(source, { limitInputPixels: 40_000_000 })
       .rotate()
       .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 85 })
-      .toBuffer();
+      .toBuffer({ resolveWithObject: true });
+    buffer = processed.data;
+    width = processed.info.width;
+    height = processed.info.height;
   } catch {
     return { error: "Velg et gyldig JPEG-, PNG- eller WebP-bilde." };
   }
@@ -74,6 +79,8 @@ export async function uploadPostImage(form: FormData): Promise<{ error?: string 
       mime_type: "image/webp",
       size_bytes: buffer.length,
       alt_text: alt,
+      width,
+      height,
     },
   });
   if (error) {

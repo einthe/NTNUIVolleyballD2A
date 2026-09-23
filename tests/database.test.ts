@@ -767,7 +767,19 @@ describe.sequential("real PostgreSQL privileges and RLS", () => {
     await asUser(other, () =>
       expect(rpc("attach_media", input(0))).rejects.toThrow("not_authorized"),
     );
-    const first = await asUser(player, () => rpc("attach_media", input(0)));
+    for (const dimensions of [{ width: 0, height: 800 }, { width: 1200 }]) {
+      await asUser(player, () =>
+        expect(rpc("attach_media", { ...input(0), ...dimensions })).rejects.toThrow(
+          "post_media_dimensions",
+        ),
+      );
+    }
+    const first = await asUser(player, () =>
+      rpc("attach_media", { ...input(0), width: 1200, height: 800 }),
+    );
+    expect(
+      (await sql("select width,height from public.post_media where id=$1", [first])).rows,
+    ).toEqual([{ width: 1200, height: 800 }]);
     expect(await asUser(player, () => rpc("attach_media", input(0)))).toBe(first);
     for (let n = 1; n < 10; n++) await asUser(player, () => rpc("attach_media", input(n)));
     await asUser(player, () =>

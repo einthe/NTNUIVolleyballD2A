@@ -1,10 +1,10 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Private images use authenticated endpoints. */
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { imageWidths } from "@/lib/image-variants";
-import type { PostMedia } from "@/lib/post-media";
+import { postImageRatio, type PostMedia } from "@/lib/post-media";
 import { DeleteButton } from "./forms";
+import { LoadingImage } from "./loading-image";
 
 export function PostGallery({
   images,
@@ -67,8 +67,11 @@ export function PostGallery({
               role="group"
               aria-label={`${index + 1} av ${images.length}`}
               aria-hidden={index !== active}
+              style={{ "--image-ratio": multiple ? 4 / 3 : postImageRatio(media) } as CSSProperties}
             >
-              <img
+              <LoadingImage
+                frameClassName="post-image-frame"
+                retryable={index === active}
                 key={responsiveImages ? "responsive" : "full"}
                 className="post-image"
                 src={`/media/${media.id}${responsiveImages ? "" : "?w=2400"}`}
@@ -86,9 +89,9 @@ export function PostGallery({
                       ? "(max-width: 760px) calc(100vw - 82px), (max-width: 1190px) min(742px, calc(100vw - 304px)), min(742px, calc(100vw - 356px))"
                       : "(max-width: 760px) calc(100vw - 82px), (max-width: 980px) calc(100vw - 304px), (max-width: 1190px) calc(100vw - 569px), (max-width: 1499px) calc(100vw - 668px), min(974px, calc(100vw - 700px))"
                 }
-                decoding="async"
+                width={media.width ?? undefined}
+                height={media.height ?? undefined}
                 loading="lazy"
-                draggable={false}
                 alt={media.alt_text || `Bilde ${index + 1} til innlegget ${title}`}
               />
             </div>

@@ -1,9 +1,9 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- GIPHY requires direct browser media requests, without an image proxy. */
 import { useEffect, useId, useRef, useState } from "react";
 import { X, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { getGiphyGifs, giphyConfigured, searchGiphy, type GiphyGif } from "@/lib/giphy";
 import type { MemeReaction } from "@/lib/discussions";
+import { LoadingImage, ImagePlaceholder } from "./loading-image";
 
 function Attribution() {
   return (
@@ -18,16 +18,13 @@ function Attribution() {
   );
 }
 function GifImage({ gif }: { gif: GiphyGif }) {
-  const [failed, setFailed] = useState(false);
-  return failed ? (
-    <span className="muted">Bildet er ikke tilgjengelig</span>
-  ) : (
-    <img
+  return (
+    <LoadingImage
+      frameClassName="meme-image-frame"
       src={gif.images.fixed_width.url}
       alt={gif.title || "Meme fra GIPHY"}
       loading="lazy"
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
     />
   );
 }
@@ -183,8 +180,10 @@ function ReactionGallery({
                 {gif ? (
                   <GifImage gif={gif} />
                 ) : (
-                  <span className="muted">
-                    {result.gifs || result.error ? "Meme utilgjengelig" : "Laster meme …"}
+                  <span className="loading-image meme-image-frame">
+                    <ImagePlaceholder loading={!result.gifs && !result.error}>
+                      {result.gifs || result.error ? "Meme utilgjengelig" : "Laster meme …"}
+                    </ImagePlaceholder>
                   </span>
                 )}
                 <span className="reaction-count">

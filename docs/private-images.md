@@ -30,6 +30,21 @@ types use asynchronous decoding. Existing/direct API uploads pass through the
 same decoding and validation on their first variant request; a filename or MIME
 type alone never makes uploaded bytes trusted.
 
+## Loading and layout stability
+
+Post photos show a palette-aware placeholder with a spinner and “Laster bilde …”
+until loaded. Uploads store the dimensions of the final, orientation-corrected
+image so single-image posts reserve the right aspect ratio before fetching bytes.
+Older images without dimensions and multi-image galleries use a stable 4:3 frame.
+Frames retain the existing 600 px height limit and contain the whole image.
+Loading or failing images do not change the frame size; failed post images offer
+“Prøv igjen”. Avatars and GIFs also show placeholders in their fixed-size frames.
+Placeholder animations respect reduced-motion preferences.
+
+Apply `202609230003_post_image_dimensions.sql` with `npx supabase db push` before
+deploying this update. It preserves existing attachments; no image downloads or
+backfill are needed. The local demo applies it automatically on restart.
+
 ## Two separate caches
 
 The **server Data Cache** stores only re-encoded image bytes. Keys include the
@@ -57,7 +72,7 @@ has already saved cannot be remotely erased by HTTP cache policy.
 ## Deployment and limits
 
 The image cache itself needs no schema migration or additional secret; the admin
-toggle uses the migration listed above.
+toggle and dimension metadata use the migrations listed above.
 Existing images are optimized on demand. Cache priming failure does not undo a
 successful upload. Cache read/write failure falls back to validated processing.
 Next's persistent Data Cache availability and entry-size limits depend on the

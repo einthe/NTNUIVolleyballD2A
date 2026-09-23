@@ -252,5 +252,7 @@ export async function seedDemo({ db, addUser, files }) {
     mime_type: "image/webp",
     size_bytes: bytes.length,
     alt_text: "Illustrasjon av en volleyballbane – lokalt eksempelbilde",
+    width: 960,
+    height: 540,
   });
 }

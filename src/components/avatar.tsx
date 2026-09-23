@@ -1,8 +1,8 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Images require the viewer's session and must bypass shared caches. */
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { imageWidths } from "@/lib/image-variants";
 import { TeamContext } from "./team-provider";
+import { LoadingImage } from "./loading-image";
 
 export function Avatar({
   name,
@@ -15,7 +15,12 @@ export function Avatar({
   userId?: string;
   path?: string | null;
 }) {
-  const [failed, setFailed] = useState<string | null>(null);
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("");
   const responsiveImages = useContext(TeamContext)?.responsiveImages !== false;
   const src =
     userId && path
@@ -23,8 +28,11 @@ export function Avatar({
       : null;
   return (
     <span className={`avatar ${large ? "avatar-large" : ""}`} aria-hidden="true">
-      {src && failed !== src ? (
-        <img
+      {src ? (
+        <LoadingImage
+          compact
+          fallback={initials}
+          frameClassName="avatar-image-frame"
           key={responsiveImages ? "responsive" : "full"}
           src={src}
           srcSet={
@@ -35,17 +43,10 @@ export function Avatar({
           sizes={responsiveImages ? (large ? "53px" : "37px") : undefined}
           width={large ? 53 : 37}
           height={large ? 53 : 37}
-          decoding="async"
           alt=""
-          onError={() => setFailed(src)}
         />
       ) : (
-        name
-          .split(" ")
-          .filter(Boolean)
-          .map((n) => n[0])
-          .slice(0, 2)
-          .join("")
+        initials
       )}
     </span>
   );
