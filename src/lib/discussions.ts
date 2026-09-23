@@ -25,6 +25,7 @@ export type DiscussionComment = {
   depth: number;
   author_user_id: string;
   author_name_snapshot: string;
+  author_photo_path?: string | null;
   body: string;
   version: number;
   created_at: string;

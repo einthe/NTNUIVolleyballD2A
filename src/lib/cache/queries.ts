@@ -198,7 +198,13 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
       break;
     case "profile-photo":
     case "remove-profile-photo":
-      add(keys.session(scope), keys.roster(scope), keys.posts(scope), ["team", scope, "post"]);
+      add(
+        keys.session(scope),
+        keys.roster(scope),
+        keys.posts(scope),
+        ["team", scope, "post"],
+        [...keys.all(scope), "discussion"],
+      );
       break;
     case "post":
     case "delete-post":

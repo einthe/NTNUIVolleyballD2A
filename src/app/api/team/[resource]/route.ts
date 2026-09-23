@@ -13,11 +13,12 @@ import {
   getLineup,
   getLineupById,
   getNotifications,
+  withAuthorPhotos,
 } from "@/server/queries";
 import { createClient } from "@/lib/supabase/server";
 import { accessScope } from "@/lib/cache/contract";
 import { eventTypes, uuid } from "@/lib/domain";
-import { discussionTargetSchema } from "@/lib/discussions";
+import { discussionTargetSchema, type DiscussionData } from "@/lib/discussions";
 import { getStandings } from "@/server/standings";
 import { StandingsError } from "@/server/standings/config";
 import { getImageSettings, getResponsiveImages } from "@/server/image-settings";
@@ -71,7 +72,8 @@ export async function GET(
         const db = await createClient();
         const result = await db.rpc("get_discussion", { data: target });
         if (result.error) throw new Error("Kunne ikke hente diskusjonen.");
-        data = result.data;
+        const discussion = result.data as DiscussionData;
+        data = { ...discussion, comments: await withAuthorPhotos(discussion.comments) };
         break;
       }
       case "standings":

@@ -237,7 +237,11 @@ function Comment({
         aria-label={`Kommentar fra ${comment.author_name_snapshot}`}
       >
         <header className="comment-header">
-          <Avatar name={comment.author_name_snapshot} />
+          <Avatar
+            name={comment.author_name_snapshot}
+            userId={comment.author_user_id}
+            path={comment.author_photo_path}
+          />
           <div>
             <strong>
               {comment.author_name_snapshot}

@@ -66,14 +66,16 @@ export const getRoster = cache(async (account?: Profile): Promise<Player[]> => {
   if (error) throw new Error("Kunne ikke hente laget.");
   return data as unknown as Player[];
 });
-async function withAuthorPhotos(posts: Post[]): Promise<Post[]> {
+export async function withAuthorPhotos<T extends { author_user_id: string }>(
+  posts: T[],
+): Promise<T[]> {
   if (!posts.length) return posts;
   const db = await createClient();
   const { data, error } = await db
     .from("profile_photos")
     .select("user_id,storage_path")
     .in("user_id", [...new Set(posts.map((post) => post.author_user_id))]);
-  // Optional photos must never make the feed unavailable.
+  // Optional photos must never make posts or comments unavailable.
   if (error) return posts;
   const photos = new Map((data ?? []).map((photo) => [photo.user_id, photo.storage_path]));
   return posts.map((post) => ({

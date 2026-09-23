@@ -22,6 +22,30 @@ const profile = { id: "one", base_role: "coach", account_status: "approved" } as
 const post = { id: "post-one", title: "Cached post", post_media: null } as Post;
 const reply = (data: unknown) => new Response(JSON.stringify({ data }), { status: 200 });
 describe("private read cache", () => {
+  it.each(["profile-photo", "remove-profile-photo"])(
+    "refreshes comment photos after %s within the current account",
+    async (kind) => {
+      const db = client();
+      const postDiscussion = queries.discussion("alice", {
+        target_type: "post",
+        target_id: "post",
+      }).queryKey;
+      const eventDiscussion = queries.discussion("alice", {
+        target_type: "event",
+        target_id: "event",
+      }).queryKey;
+      const otherAccount = queries.discussion("bob", {
+        target_type: "post",
+        target_id: "post",
+      }).queryKey;
+      for (const key of [postDiscussion, eventDiscussion, otherAccount])
+        db.setQueryData(key, { comments: [], reactions: [] });
+      await invalidateChange(db, "alice", { kind });
+      expect(db.getQueryState(postDiscussion)?.isInvalidated).toBe(true);
+      expect(db.getQueryState(eventDiscussion)?.isInvalidated).toBe(true);
+      expect(db.getQueryState(otherAccount)?.isInvalidated).toBe(false);
+    },
+  );
   it("reuses a fresh query and renders stale data while a background fetch is pending", async () => {
     vi.useFakeTimers();
     const db = client();
