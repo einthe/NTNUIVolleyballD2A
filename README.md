@@ -26,6 +26,8 @@ Post cards support both older cached single-image records and the current multi-
 
 Images display loading placeholders and reserve their space before loading. New uploads store dimensions; older images use a stable fallback frame. Apply `202609230003_post_image_dimensions.sql` with `npx supabase db push` before deploying this update. See [private image delivery](docs/private-images.md) for details.
 
+Previously viewed post photos and avatars appear immediately when switching sections within the same login session, with stale images refreshed in the background. The bounded in-memory image cache clears on sign-out and access changes. This caching update needs no additional migration or environment variable.
+
 Posts accept up to 10 private JPEG, PNG or WebP images, with a limit of 3 MB per image (or a lower configured `MAX_IMAGE_SIZE_MB`). Images are uploaded individually to stay below Vercel's request limit, validated and converted to WebP on the server. A failed upload keeps the post and completed images; retrying does not duplicate them. Galleries use hover arrows on desktop, native swipe on mobile, keyboard arrows and direct image selectors. The author/admin can append images when editing or remove the current image from the post detail view. Browser and home-screen icons use a black-and-white D2A monogram.
 
 Coaches and administrators can start from **Kampoppstilling** on the feed or schedule, select a match, then save a draft or publish. Publishing adds the lineup to the feed. Players cannot access the editor. Failed uploads retain the saved post ID so retrying does not create duplicates. Feed sections have independent error boundaries, and retry refetches their content.

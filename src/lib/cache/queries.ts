@@ -183,6 +183,19 @@ export const queries = {
 };
 
 export async function invalidateChange(client: QueryClient, scope: string, change: Change) {
+  if (typeof window !== "undefined") {
+    if (change.kind === "remove-media" && change.id)
+      window.dispatchEvent(
+        new CustomEvent("team:invalidate-image", { detail: `/media/${change.id}` }),
+      );
+    if (change.kind === "profile-photo" || change.kind === "remove-profile-photo") {
+      const access = client.getQueryData<Access>(keys.session(scope));
+      if (access)
+        window.dispatchEvent(
+          new CustomEvent("team:invalidate-image", { detail: `/avatars/${access.profile.id}` }),
+        );
+    }
+  }
   const targets: (readonly unknown[])[] = [];
   const add = (...values: (readonly unknown[])[]) => targets.push(...values);
   switch (change.kind) {

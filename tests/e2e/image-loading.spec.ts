@@ -48,7 +48,9 @@ test("photos reserve space while loading, after failure and for older uploads", 
     expect(Math.abs(after.height - before.height)).toBeLessThan(1);
     expect(Math.abs(after.y - before.y)).toBeLessThan(1);
 
-    const id = (await frame.locator("img").getAttribute("src"))!.split("/media/")[1].split("?")[0];
+    const id = (await frame.locator("img").getAttribute("data-source"))!
+      .split("/media/")[1]
+      .split("?")[0];
     const metadata = await account.service
       .from("post_media")
       .select("width,height")

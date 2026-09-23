@@ -24,9 +24,10 @@ Next's Data Cache with WebP variants from those validated bytes:
 - Avatars: 64, 128, 256 and 512 px square.
 - Posts: 480, 960, 1600 and 2400 px bounding boxes, without enlarging the source.
 
-Images use `srcset` and `sizes` so the browser selects a suitable resolution for
-the displayed size and pixel density. Post images retain lazy loading. Both image
-types use asynchronous decoding. Existing/direct API uploads pass through the
+Private image views select a variant using their measured display width and the
+screen's pixel density. The full-size admin option is still respected. Photos
+are fetched as they approach the viewport, then decoded before display.
+Existing/direct API uploads pass through the
 same decoding and validation on their first variant request; a filename or MIME
 type alone never makes uploaded bytes trusted.
 
@@ -45,7 +46,30 @@ Apply `202609230003_post_image_dimensions.sql` with `npx supabase db push` befor
 deploying this update. It preserves existing attachments; no image downloads or
 backfill are needed. The local demo applies it automatically on restart.
 
-## Two separate caches
+## Cache layers
+
+The **session image cache** keeps previously viewed post photos and avatars in
+memory as blob URLs. Returning to a section displays the saved image immediately.
+After 30 seconds, a visible image refreshes in the background on mount, focus,
+reconnect, or return to the viewport. Concurrent requests for the same variant are
+deduplicated. An unchanged ETag retains the same displayed image; changed bytes
+are decoded before replacing it. A previously cached size can stay visible while
+a larger/smaller variant is fetched. GIFs continue using GIPHY's browser delivery.
+
+This cache belongs to one authenticated provider and is not written to localStorage,
+IndexedDB, or a service worker. Sign-out, account changes, document departure and
+provider teardown clear it and abort pending requests. Late responses cannot
+restore cleared entries. Known photo replacements/removals invalidate saved
+copies; access-denied responses clear the image cache, and missing-image responses
+remove all sizes of that image. Temporary network errors keep the last photo.
+Previously seen photos can remain visible until a background check discovers a
+change, just like the existing cached post data. This is not instant remote erasure.
+
+On cache activity, unused entries are pruned after 15 minutes and under a 24 MB / 128-entry budget.
+Mounted images are protected from eviction, so the total can exceed that budget
+while many photos are displayed; it is trimmed when those views unmount. A full
+page reload starts a new session cache and uses the normal authenticated image
+requests again. Existing HTTP caching can still save transferred bytes.
 
 The **server Data Cache** stores only re-encoded image bytes. Keys include the
 Supabase project, bucket kind, storage path, live storage object ID/version/ETag,
@@ -60,11 +84,12 @@ missing source or disabled account cannot retrieve cached bytes. A source versio
 change selects a new cache entry, including deletion/recreation at the same path.
 Cold generation checks the source version again before storing a result.
 
-The **browser cache** receives `private, no-cache, must-revalidate`, an ETag and
+The **browser HTTP cache** receives `private, no-cache, must-revalidate`, an ETag and
 `Vary: Cookie, Authorization`. The ETag includes the viewer and encoded content.
 After authorization and source checks, unchanged conditional requests receive
-`304` with no body. There is no time window allowing fresh browser-cache reuse
-without revalidation. Failed/denied requests use `private, no-store`.
+`304` with no body. Network reads revalidate before reuse; the separate session
+cache supplies immediate display while those checks run. Failed/denied requests
+use `private, no-store`.
 
 As with any previously viewed content, browser history snapshots or files a user
 has already saved cannot be remotely erased by HTTP cache policy.
@@ -80,6 +105,9 @@ host. Evicted entries are regenerated; especially large full-size variants may
 need to be regenerated when they exceed the host's cache limit. Smaller variants
 and browser conditional requests still work.
 
-Run `npm test -- tests/private-images.test.ts` for cache/access regression tests,
-and `npm run test:e2e:local -- tests/e2e/private-images.spec.ts tests/e2e/profile.spec.ts`
+Run `npm test -- tests/private-images.test.ts tests/session-images.test.ts` for cache/access regression tests,
+and `npm run test:e2e:local -- tests/e2e/session-images.spec.ts tests/e2e/private-images.spec.ts tests/e2e/profile.spec.ts`
 for production-build browser checks against the disposable backend.
+For WebKit/iPhone-sized coverage, install `npx playwright install webkit` and run
+`npx playwright test --config playwright.webkit.config.ts`. This tests WebKit,
+not a physical iPhone or the complete Chrome iOS application.

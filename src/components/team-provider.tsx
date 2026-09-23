@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 import { AccessChanged, queries } from "@/lib/cache/queries";
 import type { Access } from "@/lib/cache/contract";
 import { leaveAuthContext } from "@/lib/cache/auth-events";
+import { SessionImageProvider } from "./session-image-provider";
 
 export const TeamContext = createContext<Access | null>(null);
 export function useTeam() {
@@ -71,7 +72,9 @@ export function TeamProvider({ initial, children }: { initial: Access; children:
       {blocked ? (
         <p role="status">Oppdaterer tilgang …</p>
       ) : (
-        <Session initial={initial}>{children}</Session>
+        <SessionImageProvider key={initial.scope}>
+          <Session initial={initial}>{children}</Session>
+        </SessionImageProvider>
       )}
     </QueryClientProvider>
   );

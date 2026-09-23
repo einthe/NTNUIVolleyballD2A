@@ -44,7 +44,7 @@ test("player can publish, revisit, edit and delete image/text posts without brea
   await expect
     .poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  const imagePath = (await image.getAttribute("src"))!;
+  const imagePath = (await image.getAttribute("data-source"))!;
   expect((await page.request.get(imagePath)).status()).toBe(200);
   expect((await request.get(imagePath)).status()).toBe(403);
   await page.goto("/feed");

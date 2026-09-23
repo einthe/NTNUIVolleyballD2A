@@ -41,8 +41,8 @@ test("admin can turn responsive images off and on for the whole team", async ({
     await other.goto(postUrl);
     const image = other.locator(".post-image");
     const avatar = other.locator(".post-header .avatar img");
-    await expect(image).toHaveAttribute("srcset", /w=480/);
-    await expect(avatar).toHaveAttribute("srcset", /w=64/);
+    await expect(image).toHaveAttribute("data-request-src", /w=(480|960|1600|2400)$/);
+    await expect(avatar).toHaveAttribute("data-request-src", /w=(64|128|256)$/);
     await page.goto("/admin/images");
     const toggle = page.getByRole("switch", { name: "Tilpass bildestørrelse til skjermen" });
     await expect(toggle).toBeChecked();
@@ -55,15 +55,18 @@ test("admin can turn responsive images off and on for the whole team", async ({
     await page.screenshot({ path: testInfo.outputPath("image-settings.png"), fullPage: true });
     await toggle.uncheck();
     await page.getByRole("button", { name: "Lagre", exact: true }).click();
-    await expect(page.locator(".account-summary .avatar img")).toHaveAttribute("src", /w=512/);
+    await expect(page.locator(".account-summary .avatar img")).toHaveAttribute(
+      "data-source",
+      /w=512/,
+    );
     await page.reload();
     await expect(toggle).not.toBeChecked();
     await other.reload();
     await expect(image).not.toHaveAttribute("srcset");
-    await expect(image).toHaveAttribute("src", /w=2400/);
+    await expect(image).toHaveAttribute("data-source", /w=2400/);
     await expect(avatar).not.toHaveAttribute("srcset");
-    await expect(avatar).toHaveAttribute("src", /w=512/);
-    const response = await other.request.get((await image.getAttribute("src"))!);
+    await expect(avatar).toHaveAttribute("data-source", /w=512/);
+    const response = await other.request.get((await image.getAttribute("data-source"))!);
     expect(response.headers()["cache-control"]).toBe("private, no-cache, must-revalidate");
     expect((await sharp(await response.body()).metadata()).width).toBe(1800);
 
@@ -78,10 +81,13 @@ test("admin can turn responsive images off and on for the whole team", async ({
     ).toBe(403);
     await toggle.check();
     await page.getByRole("button", { name: "Lagre", exact: true }).click();
-    await expect(page.locator(".account-summary .avatar img")).toHaveAttribute("srcset", /w=64/);
+    await expect(page.locator(".account-summary .avatar img")).toHaveAttribute(
+      "data-request-src",
+      /w=(64|128|256)$/,
+    );
     await other.clock.fastForward(31_000);
-    await expect(image).toHaveAttribute("srcset", /w=480/);
-    await expect(avatar).toHaveAttribute("srcset", /w=64/);
+    await expect(image).toHaveAttribute("data-request-src", /w=(480|960|1600|2400)$/);
+    await expect(avatar).toHaveAttribute("data-request-src", /w=(64|128|256)$/);
     await other.goto("/admin/images");
     await expect(other).toHaveURL(/\/feed$/);
   } finally {

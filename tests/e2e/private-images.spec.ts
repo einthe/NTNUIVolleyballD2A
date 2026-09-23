@@ -27,7 +27,7 @@ test("image variants revalidate privately and refuse revoked access and deleted 
   await expect
     .poll(() => img.evaluate((image) => (image as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  const path = (await img.getAttribute("src"))!;
+  const path = (await img.getAttribute("data-source"))!;
   const small = await page.request.get(`${path}?w=480`);
   const large = await page.request.get(`${path}?w=1600`);
   expect(small.status()).toBe(200);

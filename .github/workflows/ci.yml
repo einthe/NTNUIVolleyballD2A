@@ -15,8 +15,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e:local
+      - run: npx playwright test --config playwright.webkit.config.ts
       - run: npm run test:e2e:demo
       - run: npm run test:e2e
   supabase-integration:

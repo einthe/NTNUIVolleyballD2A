@@ -57,8 +57,8 @@ test("post and event comments and replies show current private profile photos", 
       .click();
     const avatar = page.locator(".account-summary .avatar img");
     await expect(avatar).toBeVisible();
-    if (previous) await expect(avatar).not.toHaveAttribute("src", previous);
-    const src = (await avatar.getAttribute("src"))!;
+    if (previous) await expect(avatar).not.toHaveAttribute("data-source", previous);
+    const src = (await avatar.getAttribute("data-source"))!;
     previous = src;
     expect((await request.get(src)).status()).toBe(403);
     for (const url of targets) {
@@ -66,7 +66,7 @@ test("post and event comments and replies show current private profile photos", 
       const images = page.locator(".comment-header .avatar img");
       await expect(images).toHaveCount(2);
       for (const image of await images.all()) {
-        await expect(image).toHaveAttribute("src", src);
+        await expect(image).toHaveAttribute("data-source", src);
         await expect
           .poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth))
           .toBeGreaterThan(0);
@@ -81,7 +81,7 @@ test("post and event comments and replies show current private profile photos", 
       await other.goto(url);
       await expect(other.locator(".comment-header .avatar img")).toHaveCount(2);
       await expect(other.locator(".comment-header .avatar img").first()).toHaveAttribute(
-        "src",
+        "data-source",
         previous,
       );
     }

@@ -44,7 +44,7 @@ test("profile pictures upload, persist, replace and remove across the account, p
   await expect
     .poll(() => avatar.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  const firstSrc = (await avatar.getAttribute("src"))!;
+  const firstSrc = (await avatar.getAttribute("data-source"))!;
   const photo = await page.request.get(firstSrc);
   expect(photo.status()).toBe(200);
   expect(photo.headers()["cache-control"]).toBe("private, no-cache, must-revalidate");
@@ -53,21 +53,21 @@ test("profile pictures upload, persist, replace and remove across the account, p
   const conditional = await page.request.get(firstSrc, { headers: { "If-None-Match": etag } });
   expect(conditional.status()).toBe(304);
   expect((await conditional.body()).length).toBe(0);
-  const chosen = await avatar.evaluate((img) => (img as HTMLImageElement).currentSrc);
+  const chosen = (await avatar.getAttribute("data-request-src"))!;
   const thumbnail = await page.request.get(chosen);
   expect((await sharp(await thumbnail.body()).metadata()).width).toBeLessThanOrEqual(128);
   expect((await request.get(firstSrc)).status()).toBe(403);
   await page.reload();
-  await expect(avatar).toHaveAttribute("src", firstSrc);
+  await expect(avatar).toHaveAttribute("data-source", firstSrc);
   expect(
     (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
   ).toEqual([]);
   await page.screenshot({ path: info.outputPath("profile.png"), fullPage: true });
   await page.goto("/roster");
   const card = page.locator(".player-card").filter({ hasText: account.name });
-  await expect(card.locator(".avatar img")).toHaveAttribute("src", firstSrc);
+  await expect(card.locator(".avatar img")).toHaveAttribute("data-source", firstSrc);
   await page.goto(postUrl);
-  await expect(page.locator(".post-header .avatar img")).toHaveAttribute("src", firstSrc);
+  await expect(page.locator(".post-header .avatar img")).toHaveAttribute("data-source", firstSrc);
   await page.goto("/profile");
   await upload.setInputFiles(await picture("#167d8d"));
   if (process.env.E2E_LOCAL_ADAPTER === "1") {
@@ -79,15 +79,15 @@ test("profile pictures upload, persist, replace and remove across the account, p
     await expect(
       page.getByRole("alert").filter({ hasText: "kunne ikke lastes opp" }),
     ).toBeVisible();
-    await expect(avatar).toHaveAttribute("src", firstSrc);
+    await expect(avatar).toHaveAttribute("data-source", firstSrc);
     await upload.setInputFiles(await picture("#167d8d"));
   }
   await page.getByRole("button", { name: "Bytt profilbilde", exact: true }).click();
-  await expect(avatar).not.toHaveAttribute("src", firstSrc);
+  await expect(avatar).not.toHaveAttribute("data-source", firstSrc);
   await expect
     .poll(() => avatar.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  const secondSrc = (await avatar.getAttribute("src"))!;
+  const secondSrc = (await avatar.getAttribute("data-source"))!;
   expect((await page.request.get(firstSrc, { headers: { "If-None-Match": etag } })).status()).toBe(
     404,
   );
