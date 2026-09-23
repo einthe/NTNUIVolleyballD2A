@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { ViewLink, updateView } from "@/components/view-link";
 import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
 import { QueryState } from "@/components/query-state";
@@ -46,7 +47,6 @@ function ScheduleView({
     Error
   >;
 }) {
-  const router = useRouter();
   const { events = [], count = 0 } = query.data ?? {};
   const canCreate = (Object.keys(eventTypes) as EventType[]).some((type) =>
     canManageEvent(profile, roles, type),
@@ -72,18 +72,20 @@ function ScheduleView({
       </PageHeading>
       <div className="schedule-toolbar">
         <nav className="filter-tabs" aria-label="Tidsperiode">
-          <Link
+          <ViewLink
             className={!past ? "selected" : ""}
+            aria-current={!past ? "page" : undefined}
             href={`/schedule${kind ? `?type=${kind}` : ""}`}
           >
             Kommende
-          </Link>
-          <Link
+          </ViewLink>
+          <ViewLink
             className={past ? "selected" : ""}
+            aria-current={past ? "page" : undefined}
             href={`/schedule?history=1${kind ? `&type=${kind}` : ""}`}
           >
             Tidligere
-          </Link>
+          </ViewLink>
         </nav>
         <div className="inline-filter">
           <label className="sr-only" htmlFor="event-filter">
@@ -98,7 +100,7 @@ function ScheduleView({
               if (past) params.set("history", "1");
               if (event.target.value) params.set("type", event.target.value);
               const search = params.toString();
-              router.push(`/schedule${search ? `?${search}` : ""}`, { scroll: false });
+              updateView(`/schedule${search ? `?${search}` : ""}`);
             }}
           >
             <option value="">Alle hendelser</option>

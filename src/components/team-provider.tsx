@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AccessChanged, queries } from "@/lib/cache/queries";
 import type { Access } from "@/lib/cache/contract";
 import { leaveAuthContext } from "@/lib/cache/auth-events";
@@ -86,11 +86,12 @@ function Session({ initial, children }: { initial: Access; children: ReactNode }
     refetchInterval: 30_000,
   });
   const pathname = usePathname();
+  const search = useSearchParams().toString();
   const client = useQueryClient();
   // The layout persists. Re-check stale authorization on navigation even when
   // that destination's content is still fresh in the client cache.
   useEffect(() => {
     void client.fetchQuery(queries.session(initial.scope)).catch(() => {});
-  }, [client, pathname, initial.scope]);
+  }, [client, pathname, search, initial.scope]);
   return <TeamContext.Provider value={session.data}>{children}</TeamContext.Provider>;
 }

@@ -5,6 +5,7 @@ import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
 import { QueryState } from "@/components/query-state";
 import Link from "next/link";
+import { ViewLink } from "@/components/view-link";
 import { Redirect } from "@/components/redirect";
 import { Plus, Volleyball } from "lucide-react";
 import { canCoach } from "@/lib/domain";
@@ -22,9 +23,36 @@ export default function ChooseLineupMatch() {
   });
   if (!canCoach(profile)) return <Redirect href="/feed" />;
   return (
-    <QueryState query={query} title="Kampene kunne ikke hentes">
-      {({ events, count }) => <MatchList events={events} count={count} page={page} past={past} />}
-    </QueryState>
+    <div className="narrow-page">
+      <BackLink href="/feed">Tilbake til innlegg</BackLink>
+      <PageHeading
+        title="Ny kampoppstilling"
+        description="Velg kampen, sett opp spillerne og publiser oppstillingen i lagets feed."
+      >
+        <Link className="button secondary" href="/schedule/new">
+          <Plus size={16} /> Opprett kamp
+        </Link>
+      </PageHeading>
+      <nav className="filter-tabs" aria-label="Velg kamper">
+        <ViewLink
+          className={!past ? "selected" : ""}
+          aria-current={!past ? "page" : undefined}
+          href="/lineups/new"
+        >
+          Kommende kamper
+        </ViewLink>
+        <ViewLink
+          className={past ? "selected" : ""}
+          aria-current={past ? "page" : undefined}
+          href="/lineups/new?history=1"
+        >
+          Tidligere kamper
+        </ViewLink>
+      </nav>
+      <QueryState query={query} title="Kampene kunne ikke hentes">
+        {({ events, count }) => <MatchList events={events} count={count} page={page} past={past} />}
+      </QueryState>
+    </div>
   );
 }
 function MatchList({
@@ -39,24 +67,7 @@ function MatchList({
   past: boolean;
 }) {
   return (
-    <div className="narrow-page">
-      <BackLink href="/feed">Tilbake til innlegg</BackLink>
-      <PageHeading
-        title="Ny kampoppstilling"
-        description="Velg kampen, sett opp spillerne og publiser oppstillingen i lagets feed."
-      >
-        <Link className="button secondary" href="/schedule/new">
-          <Plus size={16} /> Opprett kamp
-        </Link>
-      </PageHeading>
-      <nav className="filter-tabs" aria-label="Velg kamper">
-        <Link className={!past ? "selected" : ""} href="/lineups/new">
-          Kommende kamper
-        </Link>
-        <Link className={past ? "selected" : ""} href="/lineups/new?history=1">
-          Tidligere kamper
-        </Link>
-      </nav>
+    <>
       <div className="event-list">
         {events.map((event) => (
           <EventCard key={event.id} event={event} href={`/schedule/${event.id}/lineup`} />
@@ -81,6 +92,6 @@ function MatchList({
         size={24}
         href={`/lineups/new?history=${past ? "1" : "0"}`}
       />
-    </div>
+    </>
   );
 }

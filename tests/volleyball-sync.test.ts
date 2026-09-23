@@ -26,7 +26,7 @@ it("does not use external services when import is disabled or credentials are mi
   expect(mocks.rpc).not.toHaveBeenCalled();
   expect(mocks.fetchMatches).not.toHaveBeenCalled();
 });
-it("does not fetch the provider again when the daily database lease is unavailable", async () => {
+it("does not fetch the provider again when the database lease is unavailable", async () => {
   mocks.rpc.mockResolvedValue({ data: null, error: null });
   expect(await syncVolleyballMatches()).toEqual({ status: "current" });
   expect(mocks.fetchMatches).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ it("records a failed attempt instead of replacing existing matches during an out
     data: { sync_key: "201070:449623:913845", lease_id: "lease", failed: true },
   });
 });
-it("protects the daily job even if CRON_SECRET is absent and never trusts query parameters", async () => {
+it("protects the scheduled job even if CRON_SECRET is absent and never trusts query parameters", async () => {
   const request = (authorization?: string) =>
     new Request("https://example.test/api/cron/volleyball?teamId=1", {
       headers: authorization ? { Authorization: authorization } : {},

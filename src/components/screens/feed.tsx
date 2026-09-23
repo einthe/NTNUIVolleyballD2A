@@ -5,6 +5,7 @@ import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
 import { QueryState } from "@/components/query-state";
 import Link from "next/link";
+import { ViewLink } from "@/components/view-link";
 import {
   ArrowRight,
   Plus,
@@ -45,13 +46,14 @@ export default function Feed() {
               ["roles", "Fra ansvarsroller"],
               ["lineup", "Kampoppstillinger"],
             ].map(([key, label]) => (
-              <Link
+              <ViewLink
                 key={key}
                 href={`/feed${key ? `?filter=${key}` : ""}`}
                 className={(filter ?? "") === key ? "selected" : ""}
+                aria-current={(filter ?? "") === key ? "page" : undefined}
               >
                 {label}
-              </Link>
+              </ViewLink>
             ))}
           </nav>
           <ContentBoundary title="Innleggene kunne ikke hentes">

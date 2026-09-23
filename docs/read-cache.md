@@ -32,6 +32,15 @@ all data is authorization-sensitive, and native route-output caching alone does
 not provide entity reuse or targeted client invalidation. The query cache is not
 persisted to browser storage. No Realtime or additional infrastructure is needed.
 
+Filter tabs in the feed, schedule, lineup match picker and fines page use the
+Next-integrated History API for same-page query-string changes. Selection updates
+without waiting for an RSC navigation; uncached results show the existing loading
+state while the private API fetch runs. Controls stay mounted during loading, and
+Back/Forward, direct links and keyboard activation remain supported. Schedule
+type changes use the same mechanism. Different-page links still use normal Next
+navigation. Session checks include query-string changes so cached filters still
+revalidate stale account access.
+
 ## Cache contract
 
 `src/lib/cache/queries.ts` owns typed keys, query options, list/detail reuse, and
@@ -48,7 +57,7 @@ memory after 15 minutes.
 | Events / notification settings | 60 seconds | Stale mount, window focus, reconnect      |
 | Roster                         | 5 minutes  | Stale mount, window focus, reconnect      |
 
-Standings and event lists refresh every 24 hours while the page is visible; other reads use the triggers above. The daily server-side match import is described in [VolleyballLive matches](volleyball-matches.md). Feed and event records seed complete records into matching detail queries in the same scope, marked
+Standings and event lists refresh every five minutes while the page is visible; other reads use the triggers above. The server-side match import is described in [VolleyballLive matches](volleyball-matches.md). Feed and event records seed complete records into matching detail queries in the same scope, marked
 stale so a canonical read always runs. Failed canonical reads retain those records. Roster search and editor player choices reuse the same roster query.
 Lineup records are cached separately from posts so they can refresh independently.
 No speculative database prefetching is added: Next Link prefetches route shells,

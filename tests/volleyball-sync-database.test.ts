@@ -69,8 +69,16 @@ it("allows only the service role to acquire sync leases", async () => {
   await sql("update volleyball_sync_state set lease_until=now()-interval '1 minute'");
 });
 
-it("imports the 16 real fixtures once per day and preserves IDs and draft lineups on update", async () => {
+it("imports the 16 real fixtures every five minutes and preserves IDs and draft lineups on update", async () => {
   expect(await finish(await claim())).toBe(16);
+  expect(
+    (
+      await sql(
+        "select extract(epoch from next_attempt_at-last_success_at)::int as seconds from volleyball_sync_state where sync_key=$1",
+        [key],
+      )
+    ).rows[0].seconds,
+  ).toBe(300);
   expect(await claim()).toBeNull();
   const before = (
     await sql("select id,external_event_id from schedule_events order by external_event_id")
@@ -130,6 +138,16 @@ it("keeps unavailable matches and history; failed or expired syncs cannot overwr
   const lease = await claim();
   await expect(finish(coach, [])).rejects.toThrow("sync_lease_expired");
   await rpc("finish_volleyball_sync", { sync_key: key, lease_id: lease, failed: true });
+  const retrySeconds = Number(
+    (
+      await sql(
+        "select extract(epoch from next_attempt_at-now()) as seconds from volleyball_sync_state where sync_key=$1",
+        [key],
+      )
+    ).rows[0].seconds,
+  );
+  expect(retrySeconds).toBeGreaterThan(290);
+  expect(retrySeconds).toBeLessThanOrEqual(300);
   expect((await sql("select count(*)::int as count from schedule_events")).rows[0].count).toBe(16);
   expect(await claim()).toBeNull();
   await due();
@@ -142,6 +160,31 @@ it("keeps unavailable matches and history; failed or expired syncs cannot overwr
     ).rows[0].external_status,
   ).toBe("unavailable");
   expect((await sql("select * from lineup_revisions")).rows).toHaveLength(1);
+});
+
+it("shortens existing daily cooldowns without releasing an active worker's lease", async () => {
+  await db.exec("begin");
+  try {
+    await sql(
+      "insert into volleyball_sync_state(sync_key,next_attempt_at,last_success_at,lease_id,lease_until) values ('old-daily',now()+interval '1 day',now()-interval '10 minutes',$1,now()+interval '1 minute')",
+      [coach],
+    );
+    await db.exec(readFileSync("supabase/migrations/202609230004_volleyball_refresh.sql", "utf8"));
+    expect(
+      (
+        await sql(
+          "select next_attempt_at<=now() as due,lease_id,lease_until>now() as leased from volleyball_sync_state where sync_key='old-daily'",
+        )
+      ).rows[0],
+    ).toEqual({ due: true, lease_id: coach, leased: true });
+    expect(await rpc("claim_volleyball_sync", { sync_key: "old-daily" })).toBeNull();
+    await sql(
+      "update volleyball_sync_state set lease_until=now()-interval '1 second' where sync_key='old-daily'",
+    );
+    expect(await rpc("claim_volleyball_sync", { sync_key: "old-daily" })).toBeTypeOf("string");
+  } finally {
+    await db.exec("rollback");
+  }
 });
 
 it("rolls back the entire batch on invalid data and supports undated fixtures", async () => {

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { login, provision } from "./support";
 
-test("daily match import rejects unauthenticated job requests", async ({ request }) => {
+test("match import rejects unauthenticated job requests", async ({ request }) => {
   expect((await request.get("/api/cron/volleyball")).status()).toBe(401);
   expect(
     (
@@ -53,6 +53,13 @@ test("imported matches appear in schedule and lineup selection, retain IDs and s
   }
   await importMatches([first, second]);
   await login(page, account);
+  let scheduleReads = 0;
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname === "/api/team/events" && url.searchParams.get("kind") === "match")
+      scheduleReads++;
+  });
+  await page.clock.install();
   await page.goto("/schedule?type=match");
   const known = page.locator(".event-card").filter({ hasText: first.title });
   await expect(known).toContainText("11:00–13:00");
@@ -60,6 +67,15 @@ test("imported matches appear in schedule and lineup selection, retain IDs and s
     "Tidspunkt ikke fastsatt",
   );
   await expect(known).not.toContainText(/Hjemmekamp|Bortekamp|Nøytral bane/);
+  expect(scheduleReads).toBe(1);
+  const refresh = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/api/team/events" && url.searchParams.get("kind") === "match";
+  });
+  await page.clock.fastForward(5 * 60_000 + 1);
+  await refresh;
+  expect(scheduleReads).toBe(2);
+  await expect(known).toBeVisible();
   await known.click();
   await expect(page).toHaveURL(/\/schedule\/[0-9a-f-]+$/);
   const url = page.url();

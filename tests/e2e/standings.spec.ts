@@ -128,7 +128,7 @@ test.describe("private standings", () => {
     await expect(page.getByRole("link", { name: "VolleyballLive" })).toBeVisible();
   });
 
-  test("refreshes daily and preserves visible standings during a failed refresh", async ({
+  test("refreshes every five minutes and preserves visible standings during a failed refresh", async ({
     page,
   }) => {
     const user = await provision("player");
@@ -149,7 +149,7 @@ test.describe("private standings", () => {
     await page.clock.install();
     await page.goto("/standings");
     await expect(page.getByRole("table")).toBeVisible();
-    await page.clock.fastForward(24 * 60 * 60_000 + 1);
+    await page.clock.fastForward(5 * 60_000 + 1);
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       "Viser sist hentede innhold",
     );

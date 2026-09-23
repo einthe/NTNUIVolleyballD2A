@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useState } from "react";
-import Link from "next/link";
+import { ViewLink } from "@/components/view-link";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Plus, ReceiptText, X } from "lucide-react";
@@ -38,14 +38,14 @@ export default function FinesPage() {
       <PageHeading title="Bøter" />
       <nav className="filter-tabs" aria-label="Bøter">
         {tabs.map(([key, label]) => (
-          <Link
+          <ViewLink
             key={key}
             href={key === "table" ? "/fines" : `/fines?tab=${key}`}
             className={tab === key ? "selected" : undefined}
             aria-current={tab === key ? "page" : undefined}
           >
             {label}
-          </Link>
+          </ViewLink>
         ))}
       </nav>
       <QueryState query={query} title="Bøtene kunne ikke hentes">
@@ -199,9 +199,9 @@ function MemberRow({
               ) : (
                 <p>
                   Opprett en aktiv bot under{" "}
-                  <Link className="inline-link" href="/fines?tab=manage">
+                  <ViewLink className="inline-link" href="/fines?tab=manage">
                     Bøter
-                  </Link>{" "}
+                  </ViewLink>{" "}
                   først.
                 </p>
               )}

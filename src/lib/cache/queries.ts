@@ -23,7 +23,7 @@ export const cacheTimes = {
   events: 60_000,
   roster: 300_000,
   volunteerWorkPoints: 60_000,
-  standings: 24 * 60 * 60_000,
+  standings: 5 * 60_000,
   lineups: 30_000,
   notifications: 15_000,
   admin: 15_000,
@@ -129,7 +129,7 @@ export const queries = {
           page: String(page),
         }),
       staleTime: cacheTimes.events,
-      refetchInterval: 24 * 60 * 60_000,
+      refetchInterval: 5 * 60_000,
     }),
   event: (scope: string, id: string, client: QueryClient) =>
     queryOptions<TeamEvent | null>({
