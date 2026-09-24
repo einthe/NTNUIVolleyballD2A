@@ -17,7 +17,7 @@ async function toggle(page: Page, enabled: boolean) {
 test("high contrast gives white text and darker surfaces in every palette and card style", async ({
   page,
 }, info) => {
-  test.setTimeout(120000);
+  test.setTimeout(180000);
   await page.goto("/auth/sign-in");
   await page.getByLabel("E-postadresse").fill("coach@demo.test");
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
@@ -26,6 +26,11 @@ test("high contrast gives white text and darker surfaces in every palette and ca
 
   for (const palette of [
     "club",
+    "club-black",
+    "club-green",
+    "club-forest",
+    "club-charcoal",
+    "club-slate",
     "ntnui",
     "petrol",
     "midnight",
@@ -37,7 +42,27 @@ test("high contrast gives white text and darker surfaces in every palette and ca
     await toggle(page, false);
     await page.locator(".account-summary").click();
     await page.getByLabel("Fargepalett").selectOption(palette);
+    await page.getByLabel("Farger på innlegg og hendelser").selectOption("soft");
+    await page.getByLabel("Fremheving av innlegg og hendelser").selectOption("standard");
     await page.locator(".account-summary").click();
+    if (palette.startsWith("club")) {
+      expect(
+        (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+      ).toEqual([]);
+      await page.screenshot({ path: info.outputPath(`${palette}.png`) });
+    }
+    if (["club-charcoal", "club-slate"].includes(palette)) {
+      for (const mode of ["standard", "full"]) {
+        await page.locator(".account-summary").click();
+        await page.getByLabel("Farger på innlegg og hendelser").selectOption("classic");
+        await page.getByLabel("Fremheving av innlegg og hendelser").selectOption(mode);
+        await page.locator(".account-summary").click();
+        expect(
+          (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+          `${palette}, normal contrast, classic, ${mode}`,
+        ).toEqual([]);
+      }
+    }
     const original = await page.locator("h1").evaluate((node) => getComputedStyle(node).color);
     await toggle(page, true);
     await expect(page.locator("h1")).toHaveCSS("color", "rgb(255, 255, 255)");

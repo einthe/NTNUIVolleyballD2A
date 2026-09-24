@@ -14,7 +14,7 @@ test("palettes apply immediately, remain accessible and persist through reloads"
   await expect(selector).toHaveValue("ntnui");
   await expect(selector.locator("option:checked")).toHaveText("Skog");
   await expect(selector.locator('option[value="petrol"]')).toHaveText("Petroleum");
-  await expect(selector.locator('option[value="club"]')).toHaveText("NTNUI");
+  await expect(selector.locator('option[value="club"]')).toHaveText("NTNUI – Klassisk");
   for (const [palette, values] of Object.entries(palettes)) {
     await selector.selectOption(palette);
     await expect(page.locator("html")).toHaveAttribute("data-palette", palette);
@@ -92,7 +92,19 @@ test("account palette changes preserve private navigation and synchronize betwee
     path: `test-results/petrol-roster-${testInfo.project.name}.png`,
     fullPage: true,
   });
-  for (const palette of ["club", "amber", "burgundy", "graphite", "midnight", "plum"]) {
+  for (const palette of [
+    "club",
+    "club-black",
+    "club-green",
+    "club-forest",
+    "club-charcoal",
+    "club-slate",
+    "amber",
+    "burgundy",
+    "graphite",
+    "midnight",
+    "plum",
+  ]) {
     await page.locator(".account-summary").click();
     await selector.selectOption(palette);
     await page.locator(".account-summary").click();

@@ -35,7 +35,7 @@ test("mobile drawer preserves desktop navigation and supports focus, dismissal a
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();
   await expect(toggle).toBeFocused();
-  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
   await toggle.click();
   const viewport = page.viewportSize()!;
   await page.mouse.click(viewport.width - 8, viewport.height / 2);
@@ -67,7 +67,7 @@ test("mobile drawer preserves desktop navigation and supports focus, dismissal a
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(drawer).toBeHidden();
   await expect(page.locator(".desktop-sidebar")).toBeVisible();
-  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await toggle.click();

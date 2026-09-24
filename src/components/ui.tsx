@@ -1,19 +1,39 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, Volleyball } from "lucide-react";
-import type { ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
+import clubLogo from "@/assets/ntnui-volleyball-dark.png";
 export { Avatar } from "./avatar";
-export function Brand({ compact = false }: { compact?: boolean }) {
+export function Brand() {
+  const tintId = `brand-tint-${useId().replace(/:/g, "")}`;
   return (
     <Link className="brand" href="/feed" aria-label="NTNUI Volleyball – til innlegg">
-      <span className="brand-mark">
-        <Volleyball size={27} strokeWidth={1.5} />
-      </span>
-      <span>
-        <strong>
-          NTNUI<span className="brand-dot">.</span>
-        </strong>
-        {!compact && <small>VOLLEYBALL · D2A</small>}
-      </span>
+      <svg className="brand-filter" aria-hidden="true" width="0" height="0">
+        <defs>
+          <filter id={tintId} colorInterpolationFilters="sRGB">
+            <feColorMatrix type="saturate" values="0" />
+            {/* Brighten the lettering gently so antialiased edges retain their original weight. */}
+            <feComponentTransfer result="bright-strokes">
+              <feFuncR type="linear" slope="1.2" />
+              <feFuncG type="linear" slope="1.2" />
+              <feFuncB type="linear" slope="1.2" />
+            </feComponentTransfer>
+            <feFlood floodColor="var(--text)" result="tint" />
+            <feBlend in="bright-strokes" in2="tint" mode="multiply" />
+            <feComposite in2="SourceGraphic" operator="in" />
+          </filter>
+        </defs>
+      </svg>
+      <Image
+        className="brand-logo"
+        src={clubLogo}
+        alt=""
+        width={64}
+        height={54}
+        sizes="64px"
+        style={{ "--brand-logo-filter": `url(#${tintId})` } as CSSProperties}
+      />
+      <strong>D2A</strong>
     </Link>
   );
 }

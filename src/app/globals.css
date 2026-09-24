@@ -296,6 +296,16 @@ small {
   display: grid;
   place-items: center;
 }
+.brand-filter {
+  position: absolute;
+  pointer-events: none;
+}
+.brand-logo {
+  width: 64px;
+  height: auto;
+  flex-shrink: 0;
+  filter: var(--brand-logo-filter);
+}
 .brand strong {
   font-family: var(--display);
   font-size: 26px;
