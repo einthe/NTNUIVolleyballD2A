@@ -30,6 +30,43 @@ test("admin independently controls email/in-app notifications, and demo captures
   await expect(
     page.getByText("Lokal demo: e-poster forhåndsvises her og sendes ikke."),
   ).toBeVisible();
+  const simulator = page.getByRole("region", { name: "Test e-postvarsel", exact: true });
+  await simulator.getByRole("button", { name: "Ny test", exact: true }).click();
+  await simulator.getByRole("combobox", { name: "Mottaker", exact: true }).selectOption({
+    label: "Andrea Berg (demo) · admin@demo.test",
+  });
+  await simulator
+    .getByRole("combobox", { name: "Varseltype", exact: true })
+    .selectOption("event_comment_created");
+  await expect(simulator.getByLabel("Forhåndsvisning av testvarsel")).toContainText(
+    "Ny kommentar: Lagkveld",
+  );
+  await simulator
+    .getByRole("combobox", { name: "Varseltype", exact: true })
+    .selectOption("fine_received");
+  await expect(simulator.getByLabel("Forhåndsvisning av testvarsel")).toContainText(
+    "For sent til trening · 50 kr",
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await simulator.screenshot({ path: info.outputPath("test-email-form.png") });
+  await simulator.getByRole("button", { name: "Forhåndsvis test", exact: true }).click();
+  // Both viewport projects share the same demo admin and its send cooldown.
+  await expect(simulator.locator('[role="status"], [role="alert"]')).toBeVisible();
+  if (await simulator.getByRole("alert").isVisible()) {
+    await page.waitForTimeout(10000);
+    await simulator.getByRole("button", { name: "Forhåndsvis test", exact: true }).click();
+  }
+  await expect(simulator.getByRole("status")).toContainText("Ingen e-post sendes");
+  const delivery = page.getByRole("region", { name: "E-postlevering", exact: true });
+  await expect(async () => {
+    await page.reload();
+    await delivery.getByText("Siste e-postvarsler", { exact: true }).click();
+    const item = delivery.locator("article").filter({ hasText: "[TEST] Du har fått en bot" });
+    await expect(item.first()).toContainText("Forhåndsvist");
+  }).toPass({ timeout: 20000 });
+  await page.locator(".notification-menu > summary").click();
+  await expect(page.locator(".notification-item").filter({ hasText: "[TEST]" })).toHaveCount(0);
+  await page.locator(".notification-menu > summary").click();
   expect(
     (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
   ).toEqual([]);

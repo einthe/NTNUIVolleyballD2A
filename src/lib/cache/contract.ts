@@ -30,6 +30,7 @@ export type NotificationSettings = {
   rules: NotificationRule[];
   delivery: { mode: "disabled" | "preview" | "resend"; configured: boolean; missing: string[] };
   queue: {
+    recipients: { id: string; full_name: string; email: string }[];
     pending: number;
     sent: number;
     failed: number;

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
@@ -7,6 +8,7 @@ import { notificationTriggers } from "@/lib/domain";
 import type { NotificationSettings as Settings, NotificationRule } from "@/lib/cache/contract";
 import { PageHeading } from "@/components/ui";
 import { ActionForm, Submit } from "@/components/forms";
+import { testNotificationSample } from "@/lib/test-notifications";
 
 const groups = [
   {
@@ -167,6 +169,7 @@ function SettingsView({ data }: { data: Settings }) {
           </details>
         )}
       </section>
+      <TestEmail data={data} />
       {groups.map((group) => (
         <section className="card notification-settings" key={group.title}>
           <h2>{group.title}</h2>
@@ -178,5 +181,110 @@ function SettingsView({ data }: { data: Settings }) {
         </section>
       ))}
     </>
+  );
+}
+
+function TestEmail({ data }: { data: Settings }) {
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [recipient, setRecipient] = useState("");
+  const [trigger, setTrigger] = useState<keyof typeof notificationTriggers>("post_by_coach");
+  const sample = testNotificationSample(trigger);
+  const preview = data.delivery.mode === "preview";
+  const recipients = data.queue.recipients;
+  return (
+    <section
+      className="card notification-delivery notification-test"
+      aria-label="Test e-postvarsel"
+    >
+      <h2>Test e-postvarsel</h2>
+      <p className="muted">
+        Simuler et varsel til ett godkjent medlem med bekreftet e-postadresse. Testen fungerer selv
+        om e-post er slått av for varseltypen. Den oppretter ingen aktivitet eller varsler i appen.
+      </p>
+      {!requestId ? (
+        <button
+          type="button"
+          className="button secondary"
+          disabled={!data.delivery.configured || !recipients.length}
+          onClick={() => setRequestId(crypto.randomUUID())}
+        >
+          Ny test
+        </button>
+      ) : (
+        <ActionForm preserveValues onSuccess={() => setRequestId(crypto.randomUUID())}>
+          <input type="hidden" name="action" value="test-notification-email" />
+          <input type="hidden" name="request_id" value={requestId} />
+          <label>
+            Mottaker
+            <select
+              name="user_id"
+              required
+              value={recipient}
+              onChange={(e) => {
+                setRecipient(e.target.value);
+                setRequestId(crypto.randomUUID());
+              }}
+            >
+              <option value="">Velg medlem</option>
+              {recipients.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.full_name} · {user.email}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Varseltype
+            <select
+              name="trigger_key"
+              value={trigger}
+              onChange={(e) => {
+                setTrigger(e.target.value as keyof typeof notificationTriggers);
+                setRequestId(crypto.randomUUID());
+              }}
+            >
+              {groups.map((group) => (
+                <optgroup key={group.title} label={group.title}>
+                  {group.keys.map((key) => (
+                    <option key={key} value={key}>
+                      {notificationTriggers[key as keyof typeof notificationTriggers]}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          <div className="message info" aria-label="Forhåndsvisning av testvarsel">
+            <div>
+              <strong>[TEST] {sample.title}</strong>
+              <p>
+                Dette er en test fra administrator. Ingen aktivitet eller endring er registrert.
+                Eksempel: {sample.body}
+              </p>
+            </div>
+          </div>
+          <p className="muted">
+            {preview
+              ? "Lokal demo: Testen forhåndsvises uten å sende e-post."
+              : "Sender én ekte e-post merket [TEST] til valgt mottaker. Lenken åpner den relevante delen av lagrommet."}
+          </p>
+          <div className="button-row">
+            <Submit
+              disabled={
+                !data.delivery.configured || !recipients.some((user) => user.id === recipient)
+              }
+            >
+              {preview ? "Forhåndsvis test" : "Send testvarsel"}
+            </Submit>
+            <button type="button" className="button secondary" onClick={() => setRequestId(null)}>
+              Lukk
+            </button>
+          </div>
+        </ActionForm>
+      )}
+      {!recipients.length && (
+        <p className="muted">Ingen godkjente medlemmer med bekreftet e-postadresse.</p>
+      )}
+    </section>
   );
 }

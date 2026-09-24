@@ -8,6 +8,8 @@ import {
 } from "@/lib/fines";
 import { z } from "zod";
 import { scheduleNotificationEmails } from "./notifications/schedule";
+import { emailConfiguration } from "./notifications/email";
+import { testNotificationSchema, testNotificationSample } from "@/lib/test-notifications";
 import sharp from "sharp";
 import { forgetImageVariants, warmImageVariants } from "@/server/private-images";
 import { createClient } from "@/lib/supabase/server";
@@ -30,6 +32,12 @@ import type { Change } from "@/lib/cache/contract";
 import type { ActionState } from "./auth-actions";
 
 function friendlyError(message: string) {
+  if (message.includes("invalid_test_recipient"))
+    return "Velg et godkjent medlem med bekreftet e-postadresse. Oppdater siden og prøv igjen.";
+  if (message.includes("test_notification_rate_limit"))
+    return "Vent 10 sekunder mellom testene og prøv igjen.";
+  if (message.includes("invalid_test_notification"))
+    return "Ugyldig testvarsel. Oppdater siden og prøv igjen.";
   if (message.includes("fine_multipliers_name"))
     return "Det finnes allerede en ekstraregel med dette navnet.";
   if (message.includes("invalid_fine_multiplier"))
@@ -281,6 +289,27 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
           secondary: form.getAll("secondary"),
         }),
       });
+    } else if (kind === "test-notification-email") {
+      if (profile.base_role !== "admin") throw new Error("not_authorized");
+      const config = emailConfiguration();
+      if (!config.configured)
+        return { error: "E-postlevering må være konfigurert før du kan sende en test." };
+      const input = testNotificationSchema.parse({
+        user_id: text("user_id"),
+        trigger_key: text("trigger_key"),
+        request_id: text("request_id"),
+      });
+      await rpc("send_test_notification_email", {
+        data: { ...input, ...testNotificationSample(input.trigger_key) },
+      });
+      scheduleNotificationEmails();
+      return {
+        success:
+          config.mode === "preview"
+            ? "Testvarselet er lagt i kø for lokal forhåndsvisning. Ingen e-post sendes."
+            : "Testvarselet er lagt i e-postkøen. Se leveringsstatus under Siste e-postvarsler.",
+        change,
+      };
     } else if (kind === "notification-rule") {
       await rpc("set_notification_rule", {
         data: notificationSchema.parse({

@@ -3739,6 +3739,12 @@ legend {
 .notification-delivery > h2 {
   margin-bottom: 10px;
 }
+.notification-test > p {
+  margin-bottom: 20px;
+}
+.notification-test .message.info {
+  margin-bottom: 0;
+}
 .notification-settings > p,
 .notification-delivery p {
   line-height: 1.65;

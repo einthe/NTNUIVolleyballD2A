@@ -267,6 +267,7 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
       add(keys.roster(scope), keys.users(scope));
       break;
     case "notification-rule":
+    case "test-notification-email":
       add(keys.rules(scope));
       break;
     case "read-notification":

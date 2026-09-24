@@ -9,6 +9,8 @@ import {
   type EmailJob,
 } from "@/server/notifications/email";
 import { GET } from "@/app/api/cron/notifications/route";
+import { testNotificationSample } from "@/lib/test-notifications";
+import { notificationTriggers } from "@/lib/domain";
 const job: EmailJob = {
   id: "00000000-0000-4000-a000-000000000001",
   lease_id: "lease",
@@ -44,6 +46,32 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+});
+it("renders simulated notification types with working section links and the normal email template", () => {
+  for (const trigger of Object.keys(
+    notificationTriggers,
+  ) as (keyof typeof notificationTriggers)[]) {
+    const sample = testNotificationSample(trigger);
+    const payload = emailPayload(
+      {
+        ...job,
+        ...sample,
+        title: `[TEST] ${sample.title}`,
+        target_id: null,
+      },
+      "Team <team@example.test>",
+      "https://team.example.test",
+    );
+    expect(payload.subject).toContain("[TEST]");
+    const section = {
+      post: "/feed",
+      event: "/schedule",
+      fine: "/fines",
+      volunteer_points: "/volunteer_work_points",
+    }[sample.target_type!];
+    expect(payload.html).toContain(`href="https://team.example.test${section}"`);
+    expect(payload.to).toEqual([job.recipient_email]);
+  }
 });
 it("escapes user content and uses only the configured site for links", () => {
   const payload = emailPayload(

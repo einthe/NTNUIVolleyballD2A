@@ -2,6 +2,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { beforeAll, beforeEach, afterAll, expect, it } from "vitest";
+import { notificationTriggers } from "@/lib/domain";
+import { testNotificationSample } from "@/lib/test-notifications";
 const db = new PGlite();
 const users = {
   admin: randomUUID(),
@@ -89,6 +91,124 @@ beforeEach(async () => {
   );
 });
 afterAll(() => db.close());
+const testEmail = (
+  trigger: keyof typeof notificationTriggers = "fine_received",
+  user = users.member,
+) => ({
+  user_id: user,
+  request_id: randomUUID(),
+  trigger_key: trigger,
+  ...testNotificationSample(trigger),
+});
+it("restricts test emails to approved admins and approved, verified recipients", async () => {
+  for (const actor of ["member", "coach", "manager", "pending", "disabled"] as const)
+    await expect(as(actor, () => rpc("send_test_notification_email", testEmail()))).rejects.toThrow(
+      "not_authorized",
+    );
+  await db.exec("set role anon");
+  try {
+    await expect(rpc("send_test_notification_email", testEmail())).rejects.toThrow(
+      "permission denied",
+    );
+  } finally {
+    await db.exec("reset role");
+  }
+  for (const user of [users.pending, users.disabled, randomUUID()])
+    await expect(
+      as("admin", () => rpc("send_test_notification_email", testEmail("fine_received", user))),
+    ).rejects.toThrow("invalid_test_recipient");
+  await db.query("update auth.users set email_confirmed_at=null where id=$1", [users.member]);
+  try {
+    await expect(
+      as("admin", () => rpc("send_test_notification_email", testEmail())),
+    ).rejects.toThrow("invalid_test_recipient");
+    const status = await as("admin", () =>
+      db.query<{ data: { recipients: { id: string }[] } }>(
+        "select notification_email_status() as data",
+      ),
+    );
+    expect(status.rows[0].data.recipients.map((r) => r.id)).not.toContain(users.member);
+  } finally {
+    await db.query("update auth.users set email_confirmed_at=now() where id=$1", [users.member]);
+  }
+});
+it("simulates every notification type without changing activities or enabling notification rules", async () => {
+  const counts = async () =>
+    (
+      await db.query(
+        "select (select count(*) from posts) as posts,(select count(*) from schedule_events) as events,(select count(*) from fines) as fines,(select count(*) from volunteer_work_points) as points",
+      )
+    ).rows;
+  const before = await counts();
+  for (const trigger of Object.keys(
+    notificationTriggers,
+  ) as (keyof typeof notificationTriggers)[]) {
+    await db.exec("update notification_email_queue set created_at=now()-interval '11 seconds'");
+    const id = await as("admin", () => rpc("send_test_notification_email", testEmail(trigger)));
+    await rule(trigger, false, false);
+    const jobs = await rpc<
+      (Job & { title: string; body: string; target_id: string | null; user_id: string })[]
+    >("claim_notification_emails", {});
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]).toMatchObject({ id, user_id: users.member, target_id: null });
+    expect(jobs[0].title).toMatch(/^\[TEST\] /);
+    expect(jobs[0].body).toContain("Ingen aktivitet eller endring er registrert");
+    expect(
+      await rpc("prepare_notification_email", { ...jobs[0], payload: { text: "test" } }),
+    ).toEqual({ text: "test" });
+    await rpc("finish_notification_email", { ...jobs[0], status: "sent" });
+  }
+  expect(await counts()).toEqual(before);
+  expect(await rows()).toEqual([]);
+  expect(
+    (await db.query("select 1 from notification_rules where email_enabled or enabled")).rows,
+  ).toEqual([]);
+});
+it("deduplicates test submissions and limits repeated sends", async () => {
+  const input = testEmail();
+  const id = await as("admin", () => rpc("send_test_notification_email", input));
+  expect(await as("admin", () => rpc("send_test_notification_email", input))).toBe(id);
+  expect(await rows("notification_email_queue")).toHaveLength(1);
+  await expect(as("admin", () => rpc("send_test_notification_email", testEmail()))).rejects.toThrow(
+    "test_notification_rate_limit",
+  );
+  await expect(
+    as("admin", () => rpc("send_test_notification_email", { ...input, user_id: users.owner })),
+  ).rejects.toThrow("invalid_test_notification");
+  await expect(
+    as("admin", () => rpc("send_test_notification_email", { ...input, trigger_key: "unknown" })),
+  ).rejects.toThrow("invalid_test_notification");
+});
+it("rechecks recipient eligibility for simulated emails at claim and immediately before delivery", async () => {
+  for (const at of ["claim", "prepare"]) {
+    for (const condition of ["disabled", "unverified", "changed-email"]) {
+      await db.exec("truncate notification_email_queue");
+      await as("admin", () => rpc("send_test_notification_email", testEmail()));
+      const [job] = at === "prepare" ? await rpc<Job[]>("claim_notification_emails", {}) : [];
+      if (condition === "disabled")
+        await db.query("update profiles set account_status='disabled' where id=$1", [users.member]);
+      if (condition === "unverified")
+        await db.query("update auth.users set email_confirmed_at=null where id=$1", [users.member]);
+      if (condition === "changed-email")
+        await db.query("update auth.users set email='changed@example.test' where id=$1", [
+          users.member,
+        ]);
+      try {
+        if (job)
+          expect(
+            await rpc("prepare_notification_email", { ...job, payload: { text: "test" } }),
+          ).toBeNull();
+        else expect(await rpc("claim_notification_emails", {})).toEqual([]);
+      } finally {
+        await db.query("update profiles set account_status='approved' where id=$1", [users.member]);
+        await db.query(
+          "update auth.users set email_confirmed_at=now(),email='member@example.test' where id=$1",
+          [users.member],
+        );
+      }
+    }
+  }
+});
 it("keeps new channels off, preserves admin-only controls and hides the email queue", async () => {
   await post();
   expect(await rows()).toEqual([]);

@@ -26,6 +26,14 @@ New posts/events, comments, reactions, fines and point changes trigger backgroun
 
 Reference: [Resend sending API](https://resend.com/docs/api-reference/emails/send-email), [Supabase Cron](https://supabase.com/docs/guides/cron/quickstart), [Vault with scheduled HTTP requests](https://supabase.com/docs/guides/functions/schedule-functions).
 
+## Test a notification email
+
+After applying `202609240001_test_notification_emails.sql` with `npx supabase db push` and deploying, open **Administrasjon → Varselinnstillinger → Test e-postvarsel → Ny test**. Select an approved member with a confirmed email and the notification type, review the example, and click **Send testvarsel**. Admins can select themselves as recipients.
+
+The message is marked **[TEST]** and uses the normal Resend sender, template, private queue and retry handling. It is sent only to the selected recipient, even if that notification type's email rule is disabled. It creates no actual post, event, comment, reaction, fine, points change or in-app notification. Links open the corresponding section of the app, since there is no real activity to open. The local demo offers **Forhåndsvis test** and never sends real email.
+
+**Siste e-postvarsler** shows the result; **Sendt til Resend** confirms provider acceptance, not inbox delivery. The normal email configuration must be ready. Duplicate submissions reuse the queued test; separate tests are limited to one every ten seconds per admin. Recipient approval, email confirmation and an unchanged address are checked again before delivery. Only admins can submit tests or see the recipient list.
+
 ## Rules and recipients
 
 - Normal posts: approved members except the author. Coach posts have a separate rule. Posts published with a selected responsibility use that role's rule or the all-responsibilities rule. Coach lineup publications can match either the coach-post or lineup rule.

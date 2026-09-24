@@ -48,12 +48,14 @@ export function ActionForm({
   auth = false,
   onSuccess,
   submitAction,
+  preserveValues = false,
 }: {
   children: ReactNode;
   className?: string;
   auth?: boolean;
   onSuccess?: () => void;
   submitAction?: (previous: ActionState, form: FormData) => Promise<ActionState>;
+  preserveValues?: boolean;
 }) {
   const router = useRouter();
   const client = useContext(QueryClientContext);
@@ -76,7 +78,11 @@ export function ActionForm({
     return result;
   }, {});
   return (
-    <form action={action} className={className ?? "form-stack"}>
+    <form
+      action={action}
+      className={className ?? "form-stack"}
+      onReset={preserveValues ? (event) => event.preventDefault() : undefined}
+    >
       {children}
       {state.error && (
         <p className="message error" role="alert">
