@@ -847,7 +847,8 @@ small {
   padding: 12px 0 14px;
   border-bottom: 2px solid transparent;
 }
-.filter-tabs a.selected {
+.filter-tabs a.selected,
+.admin-nav a[aria-current="page"] {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
@@ -2187,10 +2188,13 @@ legend {
   flex-wrap: wrap;
   gap: 24px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 15px;
   margin-bottom: 33px;
   font-size: 12px;
   color: var(--muted);
+}
+.admin-nav a {
+  padding-bottom: 13px;
+  border-bottom: 2px solid transparent;
 }
 .admin-nav a:hover {
   color: var(--accent);
@@ -2268,12 +2272,8 @@ legend {
 .notification-rule:last-child {
   border: 0;
 }
-.notification-rule .message {
-  width: 100%;
-}
-.notification-rule .button {
-  min-height: 35px;
-  font-size: 10px;
+.notification-rules-form > .button-row {
+  margin-top: 16px;
 }
 .toggle-label {
   display: flex;
@@ -3280,9 +3280,6 @@ legend {
   .notification-rule > .toggle-label {
     flex: 1;
   }
-  .notification-rule .button {
-    padding: 7px 11px;
-  }
   .auth-court {
     width: 62%;
     right: -50px;
@@ -3426,6 +3423,9 @@ legend {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+.comment-delete > .comment-actions {
+  margin-top: 16px;
+}
 .reaction-section-actions {
   display: flex;
   align-items: center;
@@ -3507,6 +3507,7 @@ legend {
   font-weight: 600;
 }
 .reaction-gallery {
+  margin-top: 16px;
   grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
 }
 .reaction-people {
@@ -3816,7 +3817,7 @@ legend {
 .notification-settings > p {
   margin-bottom: 20px;
 }
-.notification-settings > .notification-rule:first-of-type {
+.notification-rules-form .notification-rule:first-child {
   border-top: 1px solid var(--border);
 }
 .notification-delivery > p + p,
@@ -3828,12 +3829,9 @@ legend {
 }
 .notification-rule {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto auto;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
   gap: 20px;
   align-items: center;
-}
-.notification-rule > .message {
-  grid-column: 1 / -1;
 }
 .notification-delivery article {
   padding-top: 14px;
@@ -3850,9 +3848,6 @@ legend {
     gap: 12px;
   }
   .notification-rule > strong {
-    grid-column: 1 / -1;
-  }
-  .notification-rule > button {
     grid-column: 1 / -1;
   }
 }

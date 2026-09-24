@@ -8,7 +8,7 @@ Activity emails are separate from Supabase Auth's SMTP configuration. Signing up
    ```sh
    npx supabase db push
    ```
-   The migration is `202609230001_notification_channels.sql`. Existing in-app choices are preserved; all email switches and new activity rules start off. The migration does not send any emails or backfill old activities.
+   The initial migration is `202609230001_notification_channels.sql`. Also apply `202609250001_notification_rule_groups.sql` for atomic saves per settings card; it preserves all current settings. Existing in-app choices are preserved; all email switches and new activity rules start off. The migration does not send any emails or backfill old activities.
 2. Set these **server-only** Vercel Production environment variables, then redeploy:
    - `NOTIFICATION_EMAIL_MODE=resend`
    - `RESEND_API_KEY`: a Resend key permitted to send from your verified domain.
@@ -20,7 +20,7 @@ Activity emails are separate from Supabase Auth's SMTP configuration. Signing up
    - `notification_email_url`: `https://YOUR-DOMAIN/api/cron/notifications`
    - `notification_email_cron_secret`: the same `CRON_SECRET` as Vercel.
      Run [`supabase/setup-notification-email-cron.sql`](../supabase/setup-notification-email-cron.sql) in the hosted SQL editor. It invokes the protected delivery route every five minutes without storing the secret in the job text. Re-running replaces the same named job. This script is separate from migrations because it depends on the deployed domain and Vault configuration.
-4. Open **Administrasjon → Varselinnstillinger**. Check delivery configuration, enable **I appen** and/or **E-post** for the desired rules, and save each row. Configuration readiness confirms environment variables, not sender verification or actual delivery. Check recent email status and Resend logs after the next intended activity.
+4. Open **Administrasjon → Varselinnstillinger**. Check delivery configuration, enable **I appen** and/or **E-post** for the desired rules, and select **Lagre endringer** once per card. Each card saves all its rules together; unsaved edits in other cards are preserved during background refreshes. Configuration readiness confirms environment variables, not sender verification or actual delivery. Check recent email status and Resend logs after the next intended activity.
 
 New posts/events, comments, reactions, fines and point changes trigger background delivery immediately after the successful server action. Supabase Cron retries pending jobs independently of traffic. `vercel.json` also includes a daily 05:30 UTC fallback, compatible with Hobby; that daily fallback alone does not provide prompt retries. No paid Vercel plan is required.
 

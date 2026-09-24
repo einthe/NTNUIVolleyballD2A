@@ -181,10 +181,10 @@ test("admin changes reach the roster, event permissions and notification inbox",
   await expect(member.locator(".position-editor").getByRole("status")).toContainText("lagret");
   await page.goto("/admin/notifications");
   const rule = page
-    .locator("form.notification-rule")
+    .locator(".notification-rules-form")
     .filter({ has: page.getByRole("switch", { name: "Nye innlegg – I appen", exact: true }) });
   await rule.getByRole("switch", { name: "Nye innlegg – I appen", exact: true }).check();
-  await rule.getByRole("button", { name: "Lagre", exact: true }).click();
+  await rule.getByRole("button", { name: "Lagre endringer", exact: true }).click();
   await expect(rule.getByRole("status")).toContainText("lagret");
   const context = await browser.newContext({ baseURL: process.env.E2E_BASE_URL });
   try {
@@ -228,7 +228,7 @@ test("admin changes reach the roster, event permissions and notification inbox",
     await context.close();
     await page.goto("/admin/notifications");
     await rule.getByRole("switch", { name: "Nye innlegg – I appen", exact: true }).uncheck();
-    await rule.getByRole("button", { name: "Lagre", exact: true }).click();
+    await rule.getByRole("button", { name: "Lagre endringer", exact: true }).click();
     await expect(rule.getByRole("status")).toContainText("lagret");
   }
 });

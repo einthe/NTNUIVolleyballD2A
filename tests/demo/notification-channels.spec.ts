@@ -15,16 +15,30 @@ test("admin independently controls email/in-app notifications, and demo captures
   test.setTimeout(90000);
   await login(page, "admin@demo.test");
   await page.goto("/admin/notifications");
+  const card = page.getByRole("region", { name: "Innlegg", exact: true });
   const row = page
-    .locator("form.notification-rule")
+    .locator(".notification-rule")
     .filter({ has: page.locator('input[name="trigger_key"][value="post_by_coach"]') });
   const app = row.getByRole("switch", { name: "Innlegg fra trener – I appen", exact: true });
   const email = row.getByRole("switch", { name: "Innlegg fra trener – E-post", exact: true });
+  await expect(card.getByRole("button", { name: "Lagre endringer", exact: true })).toHaveCount(1);
+  const normal = card.getByRole("switch", { name: "Nye innlegg – I appen", exact: true });
+  const originalNormal = await normal.isChecked();
+  await normal.setChecked(!originalNormal);
+  const personal = page.getByRole("region", { name: "Personlige varsler", exact: true });
+  const personalToggle = personal.getByRole("switch").first();
+  const originalPersonal = await personalToggle.isChecked();
+  await personalToggle.setChecked(!originalPersonal);
   await app.uncheck();
   await email.check();
-  await row.getByRole("button", { name: "Lagre", exact: true }).click();
-  await expect(row.getByRole("status")).toContainText("lagret");
+  await card.getByRole("button", { name: "Lagre endringer", exact: true }).click();
+  await expect(card.getByRole("status")).toContainText("lagret");
+  await expect(personalToggle).toBeChecked({ checked: !originalPersonal });
+  // A settings refetch after saving this card must preserve edits in another card.
+  await expect(normal).toBeChecked({ checked: !originalNormal });
   await page.reload();
+  await expect(personalToggle).toBeChecked({ checked: originalPersonal });
+  await expect(normal).toBeChecked({ checked: !originalNormal });
   await expect(app).not.toBeChecked();
   await expect(email).toBeChecked();
   await expect(
@@ -97,10 +111,11 @@ test("admin independently controls email/in-app notifications, and demo captures
     await page.locator(".notification-menu > summary").click();
     await expect(page.locator(".notification-item").filter({ hasText: title })).toHaveCount(0);
     await page.locator(".notification-menu > summary").click();
+    await normal.setChecked(originalNormal);
     await app.check();
     await email.uncheck();
-    await row.getByRole("button", { name: "Lagre", exact: true }).click();
-    await expect(row.getByRole("status")).toContainText("lagret");
+    await card.getByRole("button", { name: "Lagre endringer", exact: true }).click();
+    await expect(card.getByRole("status")).toContainText("lagret");
     await coach.goto("/admin/notifications");
     await expect(coach).not.toHaveURL(/\/admin\/notifications$/);
   } finally {

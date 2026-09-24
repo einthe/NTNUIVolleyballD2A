@@ -454,3 +454,43 @@ it("rechecks disabled rules, inactive/unverified recipients, changed addresses a
     expect((await rows("notification_email_queue"))[0].status).toBe("cancelled");
   }
 });
+
+it("saves notification groups atomically and rejects unauthorized or malformed batches", async () => {
+  const batch = [
+    { trigger_key: "post_by_coach", enabled: true, email_enabled: false },
+    { trigger_key: "normal_post_created", enabled: false, email_enabled: true },
+  ];
+  for (const actor of ["member", "coach", "pending", "disabled"] as const)
+    await expect(as(actor, () => rpc("set_notification_rules", batch))).rejects.toThrow(
+      "not_authorized",
+    );
+  for (const invalid of [
+    null,
+    {},
+    [],
+    [batch[0], batch[0]],
+    [batch[0], { ...batch[1], trigger_key: "zz_invalid" }],
+  ]) {
+    await expect(as("admin", () => rpc("set_notification_rules", invalid))).rejects.toThrow(
+      "invalid_notification_rule",
+    );
+    expect(
+      (await db.query("select trigger_key from notification_rules where enabled or email_enabled"))
+        .rows,
+    ).toEqual([]);
+  }
+  await as("admin", () => rpc("set_notification_rules", batch));
+  expect(
+    (
+      await db.query(
+        "select trigger_key,enabled,email_enabled from notification_rules where enabled or email_enabled order by trigger_key desc",
+      )
+    ).rows,
+  ).toEqual(batch);
+  await db.exec("set role anon");
+  try {
+    await expect(rpc("set_notification_rules", batch)).rejects.toThrow("permission denied");
+  } finally {
+    await db.exec("reset role");
+  }
+});

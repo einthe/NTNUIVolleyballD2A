@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { queries } from "@/lib/cache/queries";
 import { useTeam } from "@/components/team-provider";
@@ -73,21 +74,28 @@ export default function NotificationSettings() {
     </QueryState>
   );
 }
-function Rule({ rule }: { rule: NotificationRule }) {
+function Rule({
+  rule,
+  onChange,
+}: {
+  rule: NotificationRule;
+  onChange: (rule: NotificationRule) => void;
+}) {
+  const { pending } = useFormStatus();
   const label = notificationTriggers[rule.trigger_key as keyof typeof notificationTriggers];
   return (
-    <ActionForm className="notification-rule">
-      <input type="hidden" name="action" value="notification-rule" />
+    <div className="notification-rule">
       <input type="hidden" name="trigger_key" value={rule.trigger_key} />
       <strong>{label}</strong>
       <label className="toggle-label">
         <input
           type="checkbox"
           role="switch"
-          name="enabled"
-          key={`app-${rule.enabled}`}
+          name={`enabled:${rule.trigger_key}`}
+          disabled={pending}
           aria-label={`${label} – I appen`}
-          defaultChecked={rule.enabled}
+          checked={rule.enabled}
+          onChange={(event) => onChange({ ...rule, enabled: event.target.checked })}
         />
         <span>I appen</span>
       </label>
@@ -95,15 +103,51 @@ function Rule({ rule }: { rule: NotificationRule }) {
         <input
           type="checkbox"
           role="switch"
-          name="email_enabled"
-          key={`email-${rule.email_enabled}`}
+          name={`email_enabled:${rule.trigger_key}`}
+          disabled={pending}
           aria-label={`${label} – E-post`}
-          defaultChecked={rule.email_enabled}
+          checked={rule.email_enabled}
+          onChange={(event) => onChange({ ...rule, email_enabled: event.target.checked })}
         />
         <span>E-post</span>
       </label>
-      <Submit secondary>Lagre</Submit>
-    </ActionForm>
+    </div>
+  );
+}
+function RuleGroup({
+  group,
+  rules,
+}: {
+  group: (typeof groups)[number];
+  rules: NotificationRule[];
+}) {
+  const [drafts, setDrafts] = useState<Record<string, NotificationRule>>({});
+  return (
+    <section className="card notification-settings" aria-label={group.title}>
+      <h2>{group.title}</h2>
+      <p className="muted">{group.description}</p>
+      <ActionForm
+        className="notification-rules-form"
+        preserveValues
+        onSuccess={() => setDrafts({})}
+      >
+        <input type="hidden" name="action" value="notification-rules" />
+        <div>
+          {rules.map((rule) => (
+            <Rule
+              key={rule.trigger_key}
+              rule={drafts[rule.trigger_key] ?? rule}
+              onChange={(value) =>
+                setDrafts((current) => ({ ...current, [value.trigger_key]: value }))
+              }
+            />
+          ))}
+        </div>
+        <div className="button-row">
+          <Submit>Lagre endringer</Submit>
+        </div>
+      </ActionForm>
+    </section>
   );
 }
 function SettingsView({ data }: { data: Settings }) {
@@ -171,14 +215,11 @@ function SettingsView({ data }: { data: Settings }) {
       </section>
       <TestEmail data={data} />
       {groups.map((group) => (
-        <section className="card notification-settings" key={group.title}>
-          <h2>{group.title}</h2>
-          <p className="muted">{group.description}</p>
-          {group.keys.map((key) => {
-            const rule = data.rules.find((r) => r.trigger_key === key);
-            return rule ? <Rule key={key} rule={rule} /> : null;
-          })}
-        </section>
+        <RuleGroup
+          key={group.title}
+          group={group}
+          rules={data.rules.filter((rule) => group.keys.includes(rule.trigger_key))}
+        />
       ))}
     </>
   );

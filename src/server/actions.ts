@@ -310,6 +310,20 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
             : "Testvarselet er lagt i e-postkøen. Se leveringsstatus under Siste e-postvarsler.",
         change,
       };
+    } else if (kind === "notification-rules") {
+      if (profile.base_role !== "admin") throw new Error("not_authorized");
+      const rules = z
+        .array(notificationSchema)
+        .min(1)
+        .max(100)
+        .parse(
+          form.getAll("trigger_key").map((key) => ({
+            trigger_key: key,
+            enabled: form.get(`enabled:${key}`) === "on",
+            email_enabled: form.get(`email_enabled:${key}`) === "on",
+          })),
+        );
+      await rpc("set_notification_rules", { data: rules });
     } else if (kind === "notification-rule") {
       await rpc("set_notification_rule", {
         data: notificationSchema.parse({
