@@ -49,10 +49,7 @@ export function PageHeading({
   return (
     <header className="page-heading">
       <div>
-        <h1>
-          {title}
-          <span className="brand-dot">.</span>
-        </h1>
+        <h1>{title}</h1>
         {description && <p className="muted">{description}</p>}
       </div>
       {children}

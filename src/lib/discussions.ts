@@ -15,7 +15,13 @@ export const deleteCommentSchema = discussionTargetSchema.extend({
   id: z.uuid(),
   expected_version: z.number().int().nonnegative(),
 });
+export const memeCommentSchema = discussionTargetSchema.extend({
+  id: z.uuid(),
+  parent_id: z.uuid(),
+  giphy_id: z.string().regex(/^[A-Za-z0-9]{1,64}$/),
+});
 export const reactionSchema = discussionTargetSchema.extend({
+  comment_id: z.uuid().optional(),
   giphy_id: z.string().regex(/^[A-Za-z0-9]{1,64}$/),
   active: z.boolean(),
 });
@@ -31,6 +37,7 @@ export type DiscussionComment = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  giphy_id?: string | null;
 };
 export type MemeReaction = {
   id: string;

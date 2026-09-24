@@ -41,7 +41,7 @@ export function QueryState<T>({
 export function MissingRecord() {
   return (
     <div className="empty-state">
-      <h1>Innholdet finnes ikke.</h1>
+      <h1>Innholdet finnes ikke</h1>
       <p className="muted">Det kan ha blitt fjernet.</p>
       <Link className="button secondary" href="/feed">
         Tilbake til innlegg

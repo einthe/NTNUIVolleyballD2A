@@ -94,7 +94,7 @@ test("cached navigation, entity reuse and stale refresh do not wait for read res
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Tropp", exact: true })
     .click();
-  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tropp", exact: true })).toBeVisible();
   expect(reads["/api/team/roster"] ?? 0).toBe(0);
   await page.getByLabel("Søk etter spiller").fill("Starter");
   await expect(page.getByRole("button", { name: "Søk", exact: true })).toHaveCount(0);
@@ -184,7 +184,7 @@ test("private reads enforce scope, permissions, sign-out and account changes", a
   ).toBe(409);
   await page.getByRole("link", { name: "Kampoppstilling", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Ny kampoppstilling.", exact: true }),
+    page.getByRole("heading", { name: "Ny kampoppstilling", exact: true }),
   ).toBeVisible();
   await page.locator(".account-summary").click();
   await page.getByRole("button", { name: "Logg ut", exact: true }).click();

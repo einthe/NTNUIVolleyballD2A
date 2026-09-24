@@ -169,9 +169,6 @@
 :root[data-palette|="club"] .nav-link.active {
   box-shadow: inset 3px 0 var(--club-green);
 }
-:root[data-palette|="club"] .brand-dot {
-  color: var(--club-red);
-}
 :root[data-palette|="club"] .nav-dot {
   background: var(--club-red);
 }

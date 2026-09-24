@@ -31,7 +31,7 @@ test("Botsjef manages fine types and fines for players/coaches; the team can rea
   const links = await nav.getByRole("link").allTextContents();
   expect(links.map((label) => label.trim()).slice(-2)).toEqual(["Dugnadspoeng", "Bøter"]);
   await nav.getByRole("link", { name: "Bøter", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Bøter.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bøter", exact: true })).toBeVisible();
   await expect(page.locator(`[data-fine-member="${admin.id}"]`)).toHaveCount(0);
   await expect(page.locator(`[data-fine-member="${manager.id}"]`)).toHaveClass(
     /standings-team-highlight/,

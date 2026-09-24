@@ -1,32 +1,41 @@
 "use server";
 import { scheduleNotificationEmails } from "./notifications/schedule";
 import { z } from "zod";
-import { commentSchema, deleteCommentSchema, reactionSchema } from "@/lib/discussions";
+import {
+  commentSchema,
+  deleteCommentSchema,
+  reactionSchema,
+  memeCommentSchema,
+} from "@/lib/discussions";
 import { requireAccount } from "@/server/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateDiscussion(
-  action: "comment" | "delete" | "reaction",
+  action: "comment" | "delete" | "reaction" | "meme",
   input: unknown,
 ): Promise<{ error?: string }> {
   await requireAccount();
   try {
     const data =
-      action === "comment"
-        ? commentSchema.parse(input)
-        : action === "delete"
-          ? deleteCommentSchema.parse(input)
-          : action === "reaction"
-            ? reactionSchema.parse(input)
-            : null;
+      action === "meme"
+        ? memeCommentSchema.parse(input)
+        : action === "comment"
+          ? commentSchema.parse(input)
+          : action === "delete"
+            ? deleteCommentSchema.parse(input)
+            : action === "reaction"
+              ? reactionSchema.parse(input)
+              : null;
     if (!data) return { error: "Ugyldig handling." };
     const db = await createClient();
     const result = await db.rpc(
-      action === "comment"
+      action === "comment" || action === "meme"
         ? "save_comment"
         : action === "delete"
           ? "delete_comment"
-          : "set_meme_reaction",
+          : "comment_id" in data && data.comment_id
+            ? "set_comment_meme_reaction"
+            : "set_meme_reaction",
       { data },
     );
     if (result.error) {

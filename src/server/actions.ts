@@ -320,6 +320,8 @@ export async function mutate(previousState: ActionState, form: FormData): Promis
       });
     } else if (kind === "read-notification") {
       await rpc("mark_notification_read", { target: uuid.parse(text("id")) });
+    } else if (kind === "read-all-notifications") {
+      await rpc("mark_all_notifications_read", {});
     } else if (kind === "delete-post") {
       const id = uuid.parse(text("id"));
       const { data: media } = await db.from("post_media").select("storage_path").eq("post_id", id);

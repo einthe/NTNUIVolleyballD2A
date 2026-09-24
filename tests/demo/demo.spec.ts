@@ -36,7 +36,7 @@ test("seeded coach sees private images, published lineups, draft matches and the
   await expect(page.getByRole("link", { name: "Fortsett utkast", exact: true })).toBeVisible();
   await page.goto("/lineups/new");
   await expect(
-    page.getByRole("heading", { name: "Ny kampoppstilling.", exact: true }),
+    page.getByRole("heading", { name: "Ny kampoppstilling", exact: true }),
   ).toBeVisible();
 });
 
@@ -44,7 +44,7 @@ test("demo player can create, edit and delete a post through the real applicatio
   page,
 }, testInfo) => {
   await signIn(page, "player");
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Kampoppstilling", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Nytt innlegg", exact: true }).click();
   const title = `Lokalt prøveinnlegg ${testInfo.project.name}`;
@@ -82,7 +82,7 @@ test("demo admin can approve a fictional registration while disabled accounts re
   await page.getByRole("button", { name: "Logg ut", exact: true }).click();
   await expect(page).toHaveURL(/\/auth\/sign-in$/);
   await signIn(page, "admin");
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
   await page.goto("/admin/users");
   const account = page.locator("details.admin-user").filter({ hasText: email });
   await account.locator("summary").first().click();

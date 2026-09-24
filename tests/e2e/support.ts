@@ -29,7 +29,7 @@ export async function login(page: Page, account: Awaited<ReturnType<typeof provi
   await page.getByLabel("E-postadresse").fill(account.email);
   await page.getByLabel("Passord", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
 }
 export async function postFields(page: Page, title: string) {
   await page.getByLabel("Tittel", { exact: true }).fill(title);

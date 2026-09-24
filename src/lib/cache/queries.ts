@@ -271,8 +271,13 @@ export async function invalidateChange(client: QueryClient, scope: string, chang
       add(keys.rules(scope));
       break;
     case "read-notification":
+    case "read-all-notifications":
       client.setQueryData<Notification[]>(keys.notifications(scope), (data) =>
-        data?.map((n) => (n.id === change.id ? { ...n, read_at: new Date().toISOString() } : n)),
+        data?.map((n) =>
+          !n.read_at && (change.kind === "read-all-notifications" || n.id === change.id)
+            ? { ...n, read_at: new Date().toISOString() }
+            : n,
+        ),
       );
       add(keys.notifications(scope));
       break;

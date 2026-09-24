@@ -9,7 +9,7 @@ test("mobile drawer preserves desktop navigation and supports focus, dismissal a
   await page.getByLabel("E-postadresse").fill("admin@demo.test");
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
   const toggle = page.locator(".mobile-menu-toggle");
   const drawer = page.getByRole("dialog", { name: "Navigasjon" });
   if (info.project.name === "desktop") {
@@ -42,7 +42,7 @@ test("mobile drawer preserves desktop navigation and supports focus, dismissal a
   await expect(drawer).toBeHidden();
   await toggle.click();
   await drawer.getByRole("link", { name: "Tropp", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tropp", exact: true })).toBeVisible();
   await expect(drawer).toBeHidden();
   await toggle.click();
   await drawer.getByRole("link", { name: "Kamper", exact: true }).click();

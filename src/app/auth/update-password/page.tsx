@@ -5,7 +5,7 @@ export default async function UpdatePassword() {
   if (!(await getAccount())) redirect("/auth/recover");
   return (
     <>
-      <h2>Velg nytt passord.</h2>
+      <h2>Velg nytt passord</h2>
       <p className="auth-intro">Bruk et unikt passord med minst 12 tegn.</p>
       <ActionForm auth>
         <input type="hidden" name="mode" value="update-password" />

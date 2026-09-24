@@ -201,6 +201,14 @@ export function Shell({ children }: { children: ReactNode }) {
                   <strong>Varsler</strong>
                   <span className="muted">{unread} uleste</span>
                 </div>
+                {unread > 0 && (
+                  <ActionForm className="notification-read-all">
+                    <input type="hidden" name="action" value="read-all-notifications" />
+                    <Submit secondary>
+                      <CheckCheck size={14} /> Merk alle som lest
+                    </Submit>
+                  </ActionForm>
+                )}
                 {notificationsQuery.isError && (
                   <p role="alert" className="message error">
                     Varsler kunne ikke hentes.{" "}

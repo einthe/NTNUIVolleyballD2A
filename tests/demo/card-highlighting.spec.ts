@@ -7,7 +7,7 @@ async function login(page: Page, email = "coach@demo.test") {
   await page.getByLabel("E-postadresse").fill(email);
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
 }
 
 async function highlighting(page: Page, value: "standard" | "full") {

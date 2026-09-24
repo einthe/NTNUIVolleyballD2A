@@ -73,7 +73,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await page.getByLabel("Passord", { exact: true }).fill(password);
     await page.getByLabel("Draktnummer").fill("90");
     await page.getByRole("button", { name: "Opprett konto" }).click();
-    await expect(page.getByRole("heading", { name: "Venter på godkjenning." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Venter på godkjenning" })).toBeVisible();
     const context = await browser.newContext({
       baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
     });
@@ -92,7 +92,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     await request.getByRole("button", { name: "Behandle forespørsel" }).click();
     await expect(request.getByRole("status")).toContainText("lagret");
     await page.goto("/feed");
-    await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
     await page.getByRole("link", { name: "Nytt innlegg", exact: true }).click();
     await page.getByLabel("Tittel", { exact: true }).fill(`E2E post ${run}`);
     await page.getByLabel("Innlegg", { exact: true }).fill("En melding til laget.");
@@ -122,7 +122,7 @@ test.describe("full authenticated workflow against Supabase", () => {
     const matchUrl = coach.url();
     await coach.getByRole("link", { name: "Lag kampoppstilling" }).click();
     await expect(
-      coach.getByRole("heading", { name: "Kampoppstilling.", exact: true }),
+      coach.getByRole("heading", { name: "Kampoppstilling", exact: true }),
     ).toBeVisible();
     await coach.getByLabel("Legger", { exact: true }).selectOption({ label: `Starter ${run} 1` });
     await coach.getByRole("button", { name: "Lagre utkast" }).click();

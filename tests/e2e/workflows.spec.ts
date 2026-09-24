@@ -146,7 +146,7 @@ test("coach can discover lineup creation from the feed and players cannot", asyn
   await login(page, account);
   await page.getByRole("link", { name: "Kampoppstilling", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Ny kampoppstilling.", exact: true }),
+    page.getByRole("heading", { name: "Ny kampoppstilling", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Opprett kamp", exact: true }).first()).toBeVisible();
 });

@@ -72,7 +72,7 @@ test("account palette changes preserve private navigation and synchronize betwee
   await expect(page.locator(".team-count")).toHaveCount(1);
   const other = await context.newPage();
   await other.goto("/roster");
-  await expect(other.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
+  await expect(other.getByRole("heading", { name: "Tropp", exact: true })).toBeVisible();
   await page.locator(".account-summary").click();
   const selector = page.getByRole("combobox", { name: "Fargepalett" });
   await selector.selectOption("petrol");

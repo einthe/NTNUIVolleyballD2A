@@ -6,7 +6,7 @@ async function login(page: Page, email: string) {
   await page.getByLabel("E-postadresse").fill(email);
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
 }
 test("admin independently controls email/in-app notifications, and demo captures safe email previews", async ({
   page,

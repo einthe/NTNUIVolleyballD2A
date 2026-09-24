@@ -9,7 +9,7 @@ test("role choices include secondary positions, rotate, and survive saving and r
   await page.getByLabel("E-postadresse").fill("coach@demo.test");
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
   await page.goto("/roster");
   const jonas = page.locator(".player-card").filter({ hasText: "Jonas Vik" });
   await expect(jonas.locator(".player-position")).toContainText("Kant / Dia / Libero");

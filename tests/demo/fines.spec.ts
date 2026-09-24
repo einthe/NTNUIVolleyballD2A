@@ -6,7 +6,7 @@ test("demo includes a Botsjef, ranked fines and fine types", async ({ page }, in
   await page.getByLabel("E-postadresse").fill("theo@demo.test");
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
   await page.goto("/fines");
   const members = page.locator("[data-fine-member]");
   await expect(members).toHaveCount(14);

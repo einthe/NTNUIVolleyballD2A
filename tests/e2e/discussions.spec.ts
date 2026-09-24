@@ -34,8 +34,8 @@ async function giphy(page: Page) {
   });
   await page.route("https://media.giphy.com/**", (route) =>
     route.fulfill({
-      contentType: "image/gif",
-      body: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64"),
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#34607a"/><rect y="260" width="200" height="40" fill="#e7a64c"/></svg>',
     }),
   );
   return searches;
@@ -167,7 +167,7 @@ test("post comments support replies, editing, links, deletion and persistent thr
     "href",
     "https://example.com/info",
   );
-  await expect(root.getByText("Svar til innlegget", { exact: true })).toBeVisible();
+  await expect(root.getByText("Svar til innlegget", { exact: true })).toHaveCount(0);
   await root.getByRole("button", { name: "Svar", exact: true }).click();
   await root
     .getByRole("textbox", { name: `Svar til ${account.name}`, exact: true })
@@ -177,7 +177,7 @@ test("post comments support replies, editing, links, deletion and persistent thr
   await expect(reply.getByText("Et svar på kommentaren", { exact: true })).toBeVisible();
   await expect(
     reply.getByRole("link", { name: `Svar til ${account.name}`, exact: true }),
-  ).toHaveAttribute("href", /#comment-/);
+  ).toHaveCount(0);
   await reply.getByRole("button", { name: "Svar", exact: true }).click();
   await reply
     .getByRole("textbox", { name: `Svar til ${account.name}`, exact: true })
@@ -204,6 +204,84 @@ test("post comments support replies, editing, links, deletion and persistent thr
   await expect(page.getByRole("button", { name: "Reager med et meme" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publiser kommentar" })).toHaveCount(0);
   await page.goto(url);
+  await expect(page.getByText("Kommentaren er slettet.", { exact: true })).toBeVisible();
+});
+
+test("meme replies are threaded, answerable and only hide with all comments", async ({
+  page,
+}, info) => {
+  test.skip(!process.env.E2E_LOCAL_ADAPTER, "Uses an isolated fake browser API key");
+  await giphy(page);
+  const account = await provision("player");
+  await login(page, account);
+  const url = await newPost(page, account.name);
+  await page.getByRole("button", { name: "Skriv kommentar", exact: true }).click();
+  await page
+    .getByRole("textbox", { name: "Kommenter innlegget", exact: true })
+    .fill("En kommentar med memesvar");
+  await page.getByRole("button", { name: "Publiser kommentar", exact: true }).click();
+  const root = page.locator("article.comment").filter({ hasText: "En kommentar med memesvar" });
+  const answer = root.getByRole("button", { name: "Svar", exact: true });
+  const react = root.getByRole("button", { name: "Reager", exact: true });
+  expect(Math.abs((await answer.boundingBox())!.y - (await react.boundingBox())!.y)).toBeLessThan(
+    2,
+  );
+  await react.click();
+  const picker = page.getByRole("dialog", { name: "Velg et meme" });
+  await picker
+    .getByRole("button", { name: "Reager med Volleyball celebration", exact: true })
+    .click();
+  const meme = page
+    .locator(".comment-replies > li > article")
+    .filter({ has: page.locator(".comment-meme") })
+    .first();
+  await expect(meme.locator(".comment-meme img")).toBeVisible();
+  const frame = meme.locator(".meme-image-frame");
+  await expect(frame).toHaveAttribute("data-state", "loaded");
+  const imageBounds = (await frame.locator("img").boundingBox())!;
+  const frameBounds = (await frame.boundingBox())!;
+  expect(imageBounds.height / imageBounds.width).toBeCloseTo(1.5, 1);
+  expect(frameBounds.height).toBeGreaterThanOrEqual(imageBounds.height - 1);
+  await expect(meme.locator(".comment-context")).toHaveCount(0);
+  await expect(meme.locator(".comment-header")).toContainText(account.name);
+  await expect(
+    page.locator(".discussion-comments").getByRole("button", { name: /Skjul reaksjoner/ }),
+  ).toHaveCount(0);
+  await meme.getByRole("button", { name: "Svar", exact: true }).click();
+  await meme
+    .getByRole("textbox", { name: `Svar til ${account.name}`, exact: true })
+    .fill("Svar på memet");
+  await meme.getByRole("button", { name: "Publiser svar", exact: true }).click();
+  await meme.getByRole("button", { name: "Reager", exact: true }).click();
+  await picker
+    .getByRole("button", { name: "Reager med Volleyball celebration", exact: true })
+    .click();
+  await expect(page.locator(".comment-meme")).toHaveCount(2);
+  await expect(page.getByText("Svar på memet", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".comment-meme")).toHaveCount(2);
+  await page.getByRole("button", { name: "Skjul alle kommentarer", exact: true }).click();
+  await expect(page.locator(".comment-meme")).toHaveCount(0);
+  await page.getByRole("button", { name: "Vis alle kommentarer", exact: true }).click();
+  await expect(page.locator(".comment-meme")).toHaveCount(2);
+  await expect(page.locator(".discussion > .discussion-reactions .meme-reaction")).toHaveCount(0);
+  expect(
+    (await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations,
+  ).toEqual([]);
+  await page.goto("/feed");
+  const card = page
+    .locator(".post-card")
+    .filter({ has: page.getByRole("heading", { name: `Diskusjon ${account.name}`, exact: true }) });
+  await card.getByRole("button", { name: "Vis kommentarer", exact: true }).click();
+  await expect(card.locator(".comment-meme")).toHaveCount(2);
+  await expect(card.locator(".meme-count")).toHaveCount(0);
+  await card.screenshot({ path: info.outputPath("threaded-memes.png") });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.goto(url);
+  await meme.getByRole("button", { name: "Slett reaksjon", exact: true }).click();
+  await meme.getByRole("button", { name: "Bekreft sletting", exact: true }).click();
+  await expect(page.locator(".comment-meme")).toHaveCount(1);
+  await expect(page.getByText("Svar på memet", { exact: true })).toBeVisible();
   await expect(page.getByText("Kommentaren er slettet.", { exact: true })).toBeVisible();
 });
 
@@ -340,6 +418,23 @@ test("ordinary members can discuss events, cannot moderate others, and comments 
     .filter({ hasText: "Trenerens kommentar" });
   await expect(coachComment.getByRole("button", { name: "Rediger kommentar" })).toHaveCount(0);
   await expect(coachComment.getByRole("button", { name: "Slett kommentar" })).toHaveCount(0);
+  await coachComment.getByRole("button", { name: "Reager", exact: true }).click();
+  await memberPage
+    .getByRole("dialog", { name: "Velg et meme" })
+    .getByRole("button", { name: "Reager med Volleyball celebration" })
+    .click();
+  const memeReply = memberPage
+    .locator("article.comment")
+    .filter({ has: memberPage.locator(".comment-meme") });
+  await expect(memeReply.locator(".comment-header")).toContainText(member.name);
+  await memeReply.getByRole("button", { name: "Slett reaksjon", exact: true }).click();
+  await memeReply.getByRole("button", { name: "Bekreft sletting", exact: true }).click();
+  await expect(memberPage.locator(".comment-meme")).toHaveCount(0);
+  await expect(memberPage.getByText("Kommentaren er slettet.", { exact: true })).toHaveCount(0);
+  await expect(memberPage.locator(".comment-replies > li")).toHaveCount(0);
+  await memberPage.reload();
+  await expect(coachComment).toBeVisible();
+  await expect(memberPage.locator(".comment-replies > li")).toHaveCount(0);
   await coachComment.getByRole("button", { name: "Svar", exact: true }).click();
   await coachComment
     .getByRole("textbox", { name: `Svar til ${coach.name}`, exact: true })

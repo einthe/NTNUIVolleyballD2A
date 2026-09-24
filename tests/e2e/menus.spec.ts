@@ -11,7 +11,7 @@ test("account and notification menus dismiss outside, on Escape and after naviga
   const notifications = page.locator(".notification-menu");
   const accountToggle = account.locator("summary");
   const notificationToggle = notifications.locator("summary");
-  const heading = page.getByRole("heading", { name: "Innlegg.", exact: true });
+  const heading = page.getByRole("heading", { name: "Innlegg", exact: true });
 
   await accountToggle.click();
   await expect(account).toHaveAttribute("open", "");

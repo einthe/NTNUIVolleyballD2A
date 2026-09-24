@@ -37,7 +37,7 @@ test("players see all players including zero totals, sorted by points, with thei
   await openNavigation(page);
   await page.getByRole("link", { name: "Dugnadspoeng", exact: true }).click();
   await expect(page).toHaveURL(/\/volunteer_work_points$/);
-  await expect(page.getByRole("heading", { name: "Dugnadspoeng.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dugnadspoeng", exact: true })).toBeVisible();
   const own = page
     .getByRole("row")
     .filter({ has: page.getByRole("rowheader", { name: `${player.name} (deg)`, exact: true }) });

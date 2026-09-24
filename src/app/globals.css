@@ -119,9 +119,6 @@ small {
 .muted {
   color: var(--muted);
 }
-.brand-dot {
-  color: var(--accent);
-}
 .eyebrow {
   font-size: 10px;
   font-weight: 650;
@@ -706,6 +703,13 @@ small {
   max-height: 65vh;
   overflow: auto;
 }
+.notification-read-all {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.notification-read-all .button {
+  width: 100%;
+}
 .dropdown-heading {
   display: flex;
   justify-content: space-between;
@@ -771,10 +775,6 @@ small {
   font-size: 9px;
   display: flex;
   justify-content: space-between;
-}
-.page-footer .brand-dot {
-  font-size: 14px;
-  margin-left: 6px;
 }
 .feed-layout {
   display: grid;
@@ -3391,14 +3391,6 @@ legend {
   font-size: 0.7rem;
   flex-shrink: 0;
 }
-.comment-context {
-  display: block;
-  margin-top: 10px;
-}
-.comment-context a {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 .comment-body {
   margin: 12px 0 4px;
 }
@@ -3439,6 +3431,32 @@ legend {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+}
+.comment-primary-actions {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+}
+.comment-meme {
+  margin: 12px 0 4px;
+  width: min(220px, 100%);
+}
+.comment-meme .meme-image-frame {
+  height: auto;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.comment-meme .meme-image-frame:not([data-state="loaded"]) {
+  min-height: 160px;
+}
+.comment-meme img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.comment-meme .giphy-attribution {
+  margin: 8px 0;
 }
 .reaction-toggle {
   display: inline-flex;

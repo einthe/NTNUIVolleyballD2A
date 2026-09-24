@@ -21,7 +21,7 @@ test("profile pictures upload, persist, replace and remove across the account, p
   const postUrl = page.url();
   await page.locator(".account-summary").click();
   await page.getByRole("link", { name: "Min profil", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Min profil.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Min profil", exact: true })).toBeVisible();
   const upload = page.locator('input[type="file"]');
   await upload.setInputFiles({
     name: "invalid.png",

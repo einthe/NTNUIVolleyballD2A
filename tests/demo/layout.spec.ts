@@ -9,7 +9,7 @@ async function coach(page: Page, email = "coach@demo.test") {
   await page.getByLabel("E-postadresse").fill(email);
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Innlegg", exact: true })).toBeVisible();
 }
 
 async function squareCourt(visual: Locator) {
@@ -165,7 +165,7 @@ test("responsibility colors remain readable in every palette and roster is named
     .getByRole("navigation", { name: "Hovedmeny" })
     .getByRole("link", { name: "Tropp", exact: true })
     .click();
-  await expect(page.getByRole("heading", { name: "Tropp.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tropp", exact: true })).toBeVisible();
   await expect(page).toHaveTitle(/Tropp/);
   await page.goto("/schedule");
   const training = page.locator(".event-card").filter({ hasText: "Trening: mottak og forsvar" });

@@ -91,6 +91,54 @@ beforeEach(async () => {
   );
 });
 afterAll(() => db.close());
+it("marks all of the caller's unread notifications, including beyond the visible page, without touching anyone else", async () => {
+  await db.query(
+    `insert into notifications(user_id,trigger_key,title)
+    select $1,'post_by_coach','Notice '||n from generate_series(1,75) n`,
+    [users.member],
+  );
+  await db.query(
+    "insert into notifications(user_id,trigger_key,title) values($1,'post_by_coach','Other')",
+    [users.owner],
+  );
+  await db.query(
+    "insert into notifications(user_id,trigger_key,title,read_at) values($1,'post_by_coach','Read','2026-01-01T00:00:00Z')",
+    [users.member],
+  );
+  const mark = () => db.query<{ count: number }>("select mark_all_notifications_read() as count");
+  for (const actor of ["pending", "disabled"] as const)
+    await expect(as(actor, mark)).rejects.toThrow("not_authorized");
+  await db.exec("set role anon");
+  try {
+    await expect(mark()).rejects.toThrow("permission denied");
+  } finally {
+    await db.exec("reset role");
+  }
+  expect((await as("member", mark)).rows[0].count).toBe(75);
+  expect((await as("member", mark)).rows[0].count).toBe(0);
+  expect((await db.query("select user_id from notifications where read_at is null")).rows).toEqual([
+    { user_id: users.owner },
+  ]);
+  expect(
+    (
+      await db.query<{ count: number }>(
+        "select count(*)::int as count from notifications where title='Read' and read_at='2026-01-01T00:00:00Z'",
+      )
+    ).rows[0].count,
+  ).toBe(1);
+  await db.query(
+    "insert into notifications(user_id,trigger_key,title) values($1,'post_by_coach','New')",
+    [users.member],
+  );
+  expect(
+    (
+      await db.query<{ count: number }>(
+        "select count(*)::int as count from notifications where user_id=$1 and read_at is null",
+        [users.member],
+      )
+    ).rows[0].count,
+  ).toBe(1);
+});
 const testEmail = (
   trigger: keyof typeof notificationTriggers = "fine_received",
   user = users.member,

@@ -73,7 +73,7 @@ test.describe("private standings", () => {
     ]);
     await page.getByRole("link", { name: "Tabell", exact: true }).click();
     await expect(page).toHaveURL(/\/standings$/);
-    await expect(page.getByRole("heading", { name: "Tabell." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tabell" })).toBeVisible();
     await expect(page.locator(".topbar-breadcrumb")).toContainText("Tabell");
     await expect(page.getByRole("table")).toBeVisible();
     await expect(page.getByRole("rowheader")).toHaveText(["NTNUI", "Eksempellag"]);

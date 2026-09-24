@@ -17,7 +17,7 @@ function Attribution() {
     </a>
   );
 }
-function GifImage({ gif }: { gif: GiphyGif }) {
+export function GifImage({ gif }: { gif: GiphyGif }) {
   return (
     <LoadingImage
       frameClassName="meme-image-frame"
@@ -29,6 +29,51 @@ function GifImage({ gif }: { gif: GiphyGif }) {
   );
 }
 type ReactTo = (id: string, active: boolean) => Promise<boolean>;
+
+export function ThreadMeme({ id }: { id: string }) {
+  const [result, setResult] = useState<{ gif?: GiphyGif; failed?: boolean }>({});
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!giphyConfigured) return;
+    const controller = new AbortController();
+    getGiphyGifs([id], controller.signal)
+      .then((gifs) => {
+        if (!controller.signal.aborted) setResult({ gif: gifs[0], failed: !gifs.length });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setResult({ failed: true });
+      });
+    return () => controller.abort();
+  }, [id, attempt]);
+  return (
+    <figure className="comment-meme">
+      {result.gif ? (
+        <GifImage gif={result.gif} />
+      ) : (
+        <span className="loading-image meme-image-frame">
+          <ImagePlaceholder loading={giphyConfigured && !result.failed}>
+            {giphyConfigured && !result.failed ? "Laster meme …" : "Meme utilgjengelig"}
+          </ImagePlaceholder>
+        </span>
+      )}
+      {result.failed && (
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            setResult({});
+            setAttempt((n) => n + 1);
+          }}
+        >
+          Prøv å hente memet igjen
+        </button>
+      )}
+      <figcaption>
+        <Attribution />
+      </figcaption>
+    </figure>
+  );
+}
 
 export function GiphyReactions({
   reactions,
@@ -203,13 +248,15 @@ function ReactionGallery({
     </>
   );
 }
-function GiphyPicker({
+export function GiphyPicker({
   onClose,
   onPick,
 }: {
   onClose: () => void;
   onPick: (id: string) => Promise<void>;
 }) {
+  const titleId = useId();
+  const searchId = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const [input, setInput] = useState("memes");
   const [search, setSearch] = useState({ query: "memes", offset: 0, attempt: 0 });
@@ -222,7 +269,7 @@ function GiphyPicker({
     const element = dialog.current;
     const previousFocus = document.activeElement;
     element?.showModal();
-    element?.querySelector<HTMLInputElement>("#meme-search")?.focus();
+    element?.querySelector<HTMLInputElement>("input")?.focus();
     return () => {
       element?.close();
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
@@ -256,7 +303,7 @@ function GiphyPicker({
     <dialog
       ref={dialog}
       className="meme-dialog"
-      aria-labelledby="meme-picker-title"
+      aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
         if (!sending) onClose();
@@ -275,7 +322,7 @@ function GiphyPicker({
       }}
     >
       <div className="section-title">
-        <h2 id="meme-picker-title">Velg et meme</h2>
+        <h2 id={titleId}>Velg et meme</h2>
         <button
           type="button"
           className="icon-button"
@@ -293,11 +340,11 @@ function GiphyPicker({
           load(input, 0);
         }}
       >
-        <label className="sr-only" htmlFor="meme-search">
+        <label className="sr-only" htmlFor={searchId}>
           Søk etter memes
         </label>
         <input
-          id="meme-search"
+          id={searchId}
           maxLength={50}
           required
           value={input}
