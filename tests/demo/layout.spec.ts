@@ -1,11 +1,12 @@
 import { openNavigation } from "../e2e/support";
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import sharp from "sharp";
 import { demoPassword } from "../../scripts/demo-seed.mjs";
 
-async function coach(page: Page) {
+async function coach(page: Page, email = "coach@demo.test") {
   await page.goto("/auth/sign-in");
-  await page.getByLabel("E-postadresse").fill("coach@demo.test");
+  await page.getByLabel("E-postadresse").fill(email);
   await page.getByLabel("Passord", { exact: true }).fill(demoPassword);
   await page.getByRole("button", { name: "Logg inn", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Innlegg.", exact: true })).toBeVisible();
@@ -44,11 +45,61 @@ async function squareCourt(visual: Locator) {
     }),
   );
   expect(fits).toBe(true);
+  await expect(court.locator(".avatar")).toHaveCount(6);
+  const setter = court
+    .locator(".court-slot")
+    .filter({ hasText: "Emil Solberg" })
+    .locator(".avatar img");
+  const liberoPhoto = libero.locator(".avatar img");
+  for (const photo of [setter, liberoPhoto]) {
+    await expect(photo).toBeVisible();
+    await expect
+      .poll(() => photo.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
+    const layout = await photo
+      .locator("xpath=ancestor::*[contains(@class, 'court-player')]")
+      .evaluate((node) => {
+        const avatar = node.querySelector(".avatar")!.getBoundingClientRect();
+        const shirt = node.querySelector(".jersey")!.getBoundingClientRect();
+        return {
+          above: avatar.top < shirt.top,
+          centered: Math.abs(avatar.x + avatar.width / 2 - shirt.x - shirt.width / 2) < 1,
+        };
+      });
+    expect(layout).toEqual({ above: true, centered: true });
+  }
 }
 
 test("square courts, side libero and setup controls keep their spatial layout", async ({
   page,
+  browser,
 }, info) => {
+  for (const email of ["player@demo.test", "lucas@demo.test"]) {
+    const context = await browser.newContext({ baseURL: "http://127.0.0.1:3101" });
+    try {
+      const profile = await context.newPage();
+      await coach(profile, email);
+      await profile.goto("/profile");
+      await profile.locator('input[type="file"]').setInputFiles({
+        name: "court-avatar.png",
+        mimeType: "image/png",
+        buffer: await sharp({
+          create: {
+            width: 80,
+            height: 80,
+            channels: 3,
+            background: email.startsWith("lucas") ? "#407080" : "#be934a",
+          },
+        })
+          .png()
+          .toBuffer(),
+      });
+      await profile.getByRole("button", { name: /^(Last opp|Bytt) profilbilde$/ }).click();
+      await expect(profile.locator(".profile-photo-heading .avatar img")).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  }
   await coach(page);
   await squareCourt(
     page.locator(".post-card").filter({ hasText: "Klare for Fjordvik" }).locator(".lineup-visual"),

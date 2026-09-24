@@ -1891,6 +1891,19 @@ legend {
   left: 8px;
   top: 8px;
 }
+.court-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.court-player .avatar {
+  width: clamp(36px, 12cqw, 60px);
+  height: clamp(36px, 12cqw, 60px);
+  font-size: clamp(14px, 4cqw, 20px);
+  margin-bottom: -3px;
+  z-index: 1;
+}
 .jersey {
   width: clamp(24px, 9cqw, 44px);
   height: auto;
@@ -1959,6 +1972,13 @@ legend {
   overflow-wrap: anywhere;
 }
 @container (max-width: 340px) {
+  .court-player .avatar {
+    width: clamp(32px, 11cqw, 40px);
+    height: clamp(32px, 11cqw, 40px);
+  }
+  .court-player .jersey {
+    width: clamp(20px, 7cqw, 24px);
+  }
   .court-slot small {
     display: none;
   }
@@ -1976,6 +1996,21 @@ legend {
   font-size: 10px;
   color: var(--muted);
   grid-column: 1 / -1;
+}
+@container (max-width: 280px) {
+  .court-slot {
+    gap: 1px;
+    padding: 1px;
+  }
+  .court-slot strong {
+    -webkit-line-clamp: 1;
+  }
+}
+@media (max-width: 360px) {
+  .lineup-preview,
+  .match-lineup {
+    padding: 12px;
+  }
 }
 .lineup-text summary {
   cursor: pointer;
